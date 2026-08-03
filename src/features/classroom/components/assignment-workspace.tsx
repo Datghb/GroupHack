@@ -27,6 +27,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -391,119 +392,151 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
           if (!nextOpen) setEditingAssignment(null);
         }}
       >
-        <DialogContent className='max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
+        <DialogContent className='flex max-h-[min(90vh,52rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl'>
+          <DialogHeader className='gap-1 px-6 pt-6 pb-5'>
             <DialogTitle>{editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập'}</DialogTitle>
             <DialogDescription>
               {editingAssignment
                 ? 'Cập nhật số lượng, phạm vi và hạn của các checkpoint.'
-                : 'Thêm checkpoint; hệ thống sẽ tự đặt tên theo thứ tự.'}
+                : 'Điền thông tin bài tập và thiết lập các checkpoint.'}
             </DialogDescription>
           </DialogHeader>
-          <form.AppForm>
-            <form.Form id='assignment-form' className='p-0'>
-              <FormTextField name='title' label='Tên bài tập' required />
-              <FormTextareaField name='description' label='Mô tả (không bắt buộc)' />
-              <form.AppField name='dueAt'>
-                {(field) => (
-                  <field.FieldSet>
-                    <field.Field>
-                      <field.FieldLabel htmlFor={field.name}>
-                        Hạn hoàn thành bài tập
-                      </field.FieldLabel>
-                      <Input
-                        id={field.name}
-                        type='datetime-local'
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                      />
-                    </field.Field>
-                    <field.FieldError />
-                  </field.FieldSet>
-                )}
-              </form.AppField>
-            </form.Form>
-          </form.AppForm>
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between'>
-              <Label>Danh sách checkpoint</Label>
-              <Button
-                type='button'
-                size='sm'
-                variant='outline'
-                onClick={() => setCheckpoints((items) => [...items, { ...EMPTY_CHECKPOINT }])}
-              >
-                <Icons.add />
-                Thêm checkpoint
-              </Button>
-            </div>
-            {checkpoints.map((checkpoint, index) => (
-              <div key={index} className='space-y-2 rounded-lg border p-3'>
-                <div className='flex items-center justify-between'>
-                  <span className='text-sm font-medium'>Checkpoint {index + 1}</span>
-                  {checkpoints.length > 1 && (
-                    <Button
-                      type='button'
-                      size='icon'
-                      variant='ghost'
-                      onClick={() =>
-                        setCheckpoints((items) =>
-                          items.filter((_, itemIndex) => itemIndex !== index)
-                        )
-                      }
-                    >
-                      <Icons.trash />
-                    </Button>
+          <Separator />
+          <div className='scroll-fade flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5'>
+            <form.AppForm>
+              <form.Form id='assignment-form' className='flex flex-col gap-4 p-0'>
+                <FormTextField
+                  name='title'
+                  label='Tên bài tập'
+                  required
+                  placeholder='Ví dụ: Thiết kế landing page'
+                />
+                <FormTextareaField
+                  name='description'
+                  label='Mô tả'
+                  placeholder='Yêu cầu, tài liệu hoặc lưu ý cho học sinh...'
+                  rows={3}
+                />
+                <form.AppField name='dueAt'>
+                  {(field) => (
+                    <field.FieldSet>
+                      <field.Field>
+                        <field.FieldLabel htmlFor={field.name}>
+                          Hạn hoàn thành bài tập
+                        </field.FieldLabel>
+                        <Input
+                          id={field.name}
+                          type='datetime-local'
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                        />
+                      </field.Field>
+                      <field.FieldError />
+                    </field.FieldSet>
                   )}
-                </div>
-                <div className='flex flex-col gap-2'>
-                  <Label>Phạm vi checkpoint</Label>
-                  <Select
-                    value={checkpoint.scope}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      setCheckpoints((items) =>
-                        items.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? {
-                                ...item,
-                                scope: value as CheckpointScope
-                              }
-                            : item
-                        )
-                      );
-                    }}
-                  >
-                    <SelectTrigger aria-label={`Phạm vi checkpoint ${index + 1}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value='INDIVIDUAL'>Cá nhân</SelectItem>
-                        <SelectItem value='TEAM'>Nhóm</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                </form.AppField>
+              </form.Form>
+            </form.AppForm>
+
+            <Separator />
+
+            <section className='flex flex-col gap-3' aria-labelledby='checkpoint-heading'>
+              <div className='flex items-center justify-between gap-3'>
                 <div>
-                  <Label>Hạn checkpoint</Label>
-                  <Input
-                    type='datetime-local'
-                    value={checkpoint.dueAt}
-                    onChange={(event) =>
-                      setCheckpoints((items) =>
-                        items.map((item, itemIndex) =>
-                          itemIndex === index ? { ...item, dueAt: event.target.value } : item
-                        )
-                      )
-                    }
-                  />
+                  <Label id='checkpoint-heading' className='text-base'>
+                    Checkpoint
+                  </Label>
+                  <p className='mt-1 text-sm text-muted-foreground'>
+                    Hệ thống tự đặt tên theo thứ tự.
+                  </p>
                 </div>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setCheckpoints((items) => [...items, { ...EMPTY_CHECKPOINT }])}
+                >
+                  <Icons.add data-icon='inline-start' />
+                  Thêm checkpoint
+                </Button>
               </div>
-            ))}
+              {checkpoints.map((checkpoint, index) => (
+                <div
+                  key={index}
+                  className='flex flex-col gap-4 rounded-xl border border-foreground/20 bg-muted/30 p-4 shadow-sm transition-colors focus-within:border-primary/60 hover:border-foreground/35'
+                >
+                  <div className='flex items-center justify-between gap-3'>
+                    <Badge variant='secondary'>Checkpoint {index + 1}</Badge>
+                    {checkpoints.length > 1 && (
+                      <Button
+                        type='button'
+                        size='icon-sm'
+                        variant='ghost'
+                        aria-label={`Xóa checkpoint ${index + 1}`}
+                        onClick={() =>
+                          setCheckpoints((items) =>
+                            items.filter((_, itemIndex) => itemIndex !== index)
+                          )
+                        }
+                      >
+                        <Icons.trash />
+                      </Button>
+                    )}
+                  </div>
+                  <div className='grid gap-4 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'>
+                    <div className='flex flex-col gap-2'>
+                      <Label htmlFor={`checkpoint-scope-${index}`}>Phạm vi</Label>
+                      <Select
+                        value={checkpoint.scope}
+                        onValueChange={(value) => {
+                          if (!value) return;
+                          setCheckpoints((items) =>
+                            items.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, scope: value as CheckpointScope }
+                                : item
+                            )
+                          );
+                        }}
+                      >
+                        <SelectTrigger
+                          id={`checkpoint-scope-${index}`}
+                          aria-label={`Phạm vi checkpoint ${index + 1}`}
+                          className='w-full'
+                        >
+                          <SelectValue>{getCheckpointScopeLabel(checkpoint.scope)}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value='INDIVIDUAL'>Cá nhân</SelectItem>
+                            <SelectItem value='TEAM'>Nhóm</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className='flex flex-col gap-2'>
+                      <Label htmlFor={`checkpoint-due-${index}`}>Hạn checkpoint</Label>
+                      <Input
+                        id={`checkpoint-due-${index}`}
+                        type='datetime-local'
+                        value={checkpoint.dueAt}
+                        onChange={(event) =>
+                          setCheckpoints((items) =>
+                            items.map((item, itemIndex) =>
+                              itemIndex === index ? { ...item, dueAt: event.target.value } : item
+                            )
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </section>
           </div>
-          <DialogFooter>
+          <Separator />
+          <DialogFooter className='px-6 py-4'>
             <Button variant='outline' onClick={() => setOpen(false)}>
               Hủy
             </Button>

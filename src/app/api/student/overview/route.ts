@@ -23,15 +23,17 @@ export async function GET() {
       data: { classCount: 0, assignmentCount: 0, teamCount: 0, completedCount: 0, assignments: [] }
     });
 
-  const { data: classrooms } = await db.from('classrooms').select('id,name').in('id', classIds);
   const courseIds = (enrollments ?? []).map((item) => item.course_id).filter(Boolean);
-  const { data: assignments } = courseIds.length
-    ? await db
-        .from('assignments')
-        .select('id,title,classroom_id,course_id,due_at')
-        .in('course_id', courseIds)
-        .order('created_at', { ascending: false })
-    : { data: [] };
+  const [{ data: classrooms }, { data: assignments }] = await Promise.all([
+    db.from('classrooms').select('id,name').in('id', classIds),
+    courseIds.length
+      ? db
+          .from('assignments')
+          .select('id,title,classroom_id,course_id,due_at')
+          .in('course_id', courseIds)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] })
+  ]);
   const assignmentIds = (assignments ?? []).map((item) => item.id);
   const [{ data: memberships }, { data: checkpoints }] = await Promise.all([
     assignmentIds.length

@@ -1,31 +1,42 @@
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import type { UserRole } from '@/features/classroom/domain/types';
 import { createClient } from '@/lib/supabase/server';
 
-export async function requireAuthenticatedUser() {
+const getAuthContext = cache(async () => {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) redirect('/auth/sign-in');
-  return data.user.id;
+  const { data, error } = await supabase.auth.getClaims();
+  const userId = data?.claims.sub;
+  if (error || !userId) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  return {
+    userId,
+    role: profile?.role === 'TEACHER' ? ('TEACHER' as const) : ('STUDENT' as const)
+  };
+});
+
+export async function requireAuthenticatedUser(): Promise<string> {
+  const context = await getAuthContext();
+  if (!context) redirect('/auth/sign-in');
+  return context.userId;
 }
 
 export async function getUserRole(): Promise<UserRole> {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return 'STUDENT';
-  const { data } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userData.user.id)
-    .single();
-  return data?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
+  return (await getAuthContext())?.role ?? 'STUDENT';
 }
 
 export async function requireRole(role: UserRole): Promise<string> {
-  const [userId, actualRole] = await Promise.all([requireAuthenticatedUser(), getUserRole()]);
-  if (actualRole !== role)
-    redirect(actualRole === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard');
-  return userId;
+  const context = await getAuthContext();
+  if (!context) redirect('/auth/sign-in');
+  if (context.role !== role)
+    redirect(context.role === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard');
+  return context.userId;
 }
 
 export const requireTeacher = () => requireRole('TEACHER');

@@ -7,23 +7,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { NotificationCard } from '@/components/ui/notification-card';
-import { useNotificationStore } from '../utils/store';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  markAllNotificationsAsReadMutation,
+  markNotificationAsReadMutation
+} from '../api/mutations';
+import { notificationsQueryOptions } from '../api/queries';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MAX_VISIBLE = 5;
 
-const actionRoutes: Record<string, string> = {
-  view: '/dashboard/workspaces',
-  'view-product': '/dashboard/product',
-  billing: '/dashboard/billing',
-  open: '/dashboard/kanban',
-  'open-chat': '/dashboard/chat'
-};
-
 export function NotificationCenter() {
-  const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotificationStore();
+  const { data, error, isPending } = useQuery(notificationsQueryOptions());
+  const markAsRead = useMutation(markNotificationAsReadMutation);
+  const markAllAsRead = useMutation(markAllNotificationsAsReadMutation);
+  const { user } = useCurrentUser();
   const router = useRouter();
-  const count = unreadCount();
+  const notifications = data?.items ?? [];
+  const count = data?.unreadCount ?? 0;
   const visibleNotifications = notifications.slice(0, MAX_VISIBLE);
 
   return (
@@ -39,7 +42,10 @@ export function NotificationCenter() {
       </PopoverTrigger>
       <PopoverContent align='end' className='w-[calc(100vw-2rem)] p-0 sm:w-[380px]' sideOffset={8}>
         <div className='flex items-center justify-between px-4 pt-3'>
-          <Link href='/dashboard/notifications' className='group flex items-center gap-1'>
+          <Link
+            href={user?.role === 'TEACHER' ? '/teacher/notifications' : '/student/notifications'}
+            className='group flex items-center gap-1'
+          >
             <h4 className='text-sm font-semibold group-hover:underline'>Thông báo</h4>
             <Icons.chevronRight className='text-muted-foreground h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5' />
           </Link>
@@ -54,7 +60,8 @@ export function NotificationCenter() {
                 variant='ghost'
                 size='sm'
                 className='text-muted-foreground h-auto px-2 py-1 text-xs'
-                onClick={markAllAsRead}
+                disabled={markAllAsRead.isPending}
+                onClick={() => markAllAsRead.mutate()}
               >
                 Đánh dấu tất cả đã đọc
               </Button>
@@ -63,7 +70,17 @@ export function NotificationCenter() {
         </div>
         <Separator />
         <ScrollArea className='h-[400px]'>
-          {notifications.length === 0 ? (
+          {isPending ? (
+            <div className='flex flex-col gap-2 p-3'>
+              <Skeleton className='h-20 w-full' />
+              <Skeleton className='h-20 w-full' />
+              <Skeleton className='h-20 w-full' />
+            </div>
+          ) : error ? (
+            <p className='p-6 text-center text-sm text-destructive'>
+              Không thể tải thông báo. Vui lòng thử lại.
+            </p>
+          ) : notifications.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-12'>
               <Icons.notification className='text-muted-foreground/40 mb-2 h-8 w-8' />
               <p className='text-muted-foreground text-sm'>Chưa có thông báo</p>
@@ -78,13 +95,16 @@ export function NotificationCenter() {
                   body={notification.body}
                   status={notification.status}
                   createdAt={notification.createdAt}
-                  actions={notification.actions}
-                  onMarkAsRead={markAsRead}
-                  onAction={(notifId, actionId) => {
-                    const route = actionRoutes[actionId];
-                    if (route) {
-                      markAsRead(notifId);
-                      router.push(route);
+                  actions={
+                    notification.actionUrl
+                      ? [{ id: 'open', label: 'Xem chi tiết', type: 'redirect' }]
+                      : []
+                  }
+                  onMarkAsRead={(id) => markAsRead.mutate(id)}
+                  onAction={(notificationId) => {
+                    if (notification.actionUrl) {
+                      markAsRead.mutate(notificationId);
+                      router.push(notification.actionUrl);
                     }
                   }}
                 />
