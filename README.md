@@ -1,274 +1,194 @@
-<h1 align="center">VICheck</h1>
+# ViCheck
 
-<div align="center">Nền tảng theo dõi tiến độ học tập và hoạt động nhóm trong lớp học</div>
+Nền tảng quản lý lớp học và theo dõi tiến độ học tập theo checkpoint dành cho giáo viên và học sinh.
 
-<div align="center">
-  <a href="https://dub.sh/shadcn-dashboard"><strong>View Demo</strong></a>
-</div>
-
-<br />
-
-<div align="center">
-  <img src="/public/shadcn-dashboard.png" alt="Shadcn Dashboard Cover" style="max-width: 100%; border-radius: 8px;" />
-</div>
-
-<br />
+[Dùng thử ViCheck](https://vicheck-one.vercel.app) · [Báo lỗi](https://github.com/Datghb/GroupHack/issues)
 
 <p align="center">
-  <a href="https://github.com/Kiranism/next-shadcn-dashboard-starter/stargazers"><img src="https://img.shields.io/github/stars/Kiranism/next-shadcn-dashboard-starter?style=social" alt="GitHub stars" /></a>
-  <a href="https://github.com/Kiranism/next-shadcn-dashboard-starter/network/members"><img src="https://img.shields.io/github/forks/Kiranism/next-shadcn-dashboard-starter?style=social" alt="Forks" /></a>
-  <a href="https://github.com/Kiranism/next-shadcn-dashboard-starter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Kiranism/next-shadcn-dashboard-starter" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js" />
-  <a href="https://go.clerk.com/ILdYhn7"><img src="https://img.shields.io/badge/Sponsored_by-Clerk-6C47FF?style=flat-square&logo=clerk" alt="Sponsored by Clerk" /></a>
+  <img src="public/vicheck-logo.png" alt="ViCheck logo" width="180" />
 </p>
 
-## Overview
+## Giới thiệu
 
-VICheck là nền tảng quản lý lớp học, bài tập, checkpoint và tiến độ hoạt động nhóm, được xây dựng bằng Next.js 16, shadcn/ui, TypeScript và Tailwind CSS v4.
+ViCheck giúp giáo viên tổ chức lớp học, chia khóa, tạo bài tập và theo dõi tiến độ của từng nhóm. Học sinh có thể tham gia lớp, lập hoặc xin vào nhóm, thực hiện checkpoint và theo dõi tiến độ chung.
 
-Every feature is a working, production-ready implementation, not static demo UI. Tables search, filter, sort, and paginate for real. Forms validate and mutate with cache invalidation.
-Auth, organizations, and billing function end-to-end.
-Clone it, strip what you don't need with the built-in cleanup script, and start building on patterns you'd write yourself. It works well as a base for SaaS apps, internal tools, and admin panels.
+### Dành cho giáo viên
 
-### Why This Template
+- Tạo và quản lý lớp học.
+- Tổ chức học sinh theo hai khóa trong từng lớp.
+- Tạo bài tập với deadline và nhiều checkpoint.
+- Chọn checkpoint cá nhân hoặc checkpoint theo nhóm.
+- Theo dõi tiến độ lớp, nhóm và từng bài tập.
+- Duyệt hoạt động nhóm và quan sát các checkpoint đã hoàn thành.
 
-Most dashboard templates are static demo boilerplates: screens that look finished but need rebuilding the moment you wire in real data. This starter takes the opposite approach:
+### Dành cho học sinh
 
-- **Everything actually works.** Data tables run end-to-end: server prefetch, client-side React Query cache, and URL-synced search, filtering, sorting, and pagination via nuqs. Forms are built from reusable, composable fields with Zod validation, including advanced patterns like multi-step and dialog/sheet forms, with real create/update mutations and cache invalidation on success.
-- **Industry-standard implementations.** The data layer follows the official TanStack Query SSR pattern (server prefetch + `HydrationBoundary` + `useSuspenseQuery`), typed end to end, organized in a feature-based structure with a clean API layer per feature. These are patterns you copy into production code as-is, not mockups you rebuild from scratch.
-- **Minimal by design.** Deliberately lean, with no bloated boilerplate, so you spend your time tweaking it to your use case, not deleting someone else's code. The built-in [cleanup script](#cleanup-script-start-minimal-in-60-seconds) strips any feature you don't need in under a minute.
+- Tham gia lớp bằng mã lớp.
+- Xem bài tập theo đúng khóa đã được phân công.
+- Tạo nhóm, xin gia nhập nhóm và duyệt thành viên nếu là trưởng nhóm.
+- Hoàn thành checkpoint cá nhân hoặc theo nhóm.
+- Xem dashboard tổng quan và tiến độ cộng đồng.
 
-### Tech Stack
+## Công nghệ
 
-- Framework - [Next.js 16](https://nextjs.org/16)
-- Language - [TypeScript](https://www.typescriptlang.org)
-- Auth - [Clerk](https://go.clerk.com/ILdYhn7)
-- Error tracking - [Sentry](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy26q2-nextjs&utm_content=github-banner-project-tryfree)
-- Styling - [Tailwind CSS v4](https://tailwindcss.com)
-- Components - [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com) primitives
-- Charts - [Recharts](https://recharts.org) • [Evil Charts](https://evilcharts.com/)
-- Schema validation - [Zod](https://zod.dev)
-- Data fetching - [TanStack React Query](https://tanstack.com/query)
-- State management - [Zustand](https://zustand-demo.pmnd.rs)
-- Search param state - [Nuqs](https://nuqs.47ng.com/)
-- Tables - [TanStack Data Tables](https://ui.shadcn.com/docs/components/data-table) • [Dice Table](https://www.diceui.com/docs/components/data-table)
-- Forms - [TanStack Form](https://tanstack.com/form) + [Zod](https://zod.dev)
-- Command+K interface - [kbar](https://kbar.vercel.app/)
-- Linter / Formatter - [OxLint](https://oxc.rs/docs/guide/usage/linter) • [Oxfmt](https://oxc.rs/docs/guide/usage/formatter)
-- Pre-commit hooks - [Husky](https://typicode.github.io/husky/)
-- Themes - [tweakcn](https://tweakcn.com/)
+- [Next.js 16](https://nextjs.org) và React 19
+- TypeScript
+- Tailwind CSS v4 và shadcn/ui
+- [Supabase](https://supabase.com) cho Auth và PostgreSQL
+- TanStack Query, TanStack Form và TanStack Table
+- Zod cho kiểm tra dữ liệu
+- Vitest cho unit test
+- Vercel cho hosting production
 
-_Looking for a TanStack Start version? Here's the [repo](https://git.new/tanstack-start-dashboard)._
+## Chạy dự án ở local
 
-## Features
+### Yêu cầu
 
-- Pre-built dashboard layout with sidebar, header, and content area
-- Analytics overview page with cards and charts
-- Data tables with React Query prefetch, client-side cache, search, filter, and pagination
-- Authentication and user management through Clerk
-- Multi-tenant workspaces using Clerk Organizations (create, switch, manage teams)
-- Billing and subscriptions via Clerk Billing for B2B, with plan management and feature gating
-- Client-side RBAC navigation that filters menu items by organization, permissions, and roles
-- Infobar component for tips, status messages, or contextual notes on any page
-- shadcn/ui components on Base UI primitives, styled with Tailwind CSS
-- Six-plus themes with a theme switcher
-- Feature-based folder structure
-- AI-ready: ships AGENTS.md, CLAUDE.md, and a bundled Claude Code skill so coding agents follow the template's patterns
-- A starting point for SaaS dashboards, internal tools, and client admin panels
+- Node.js 20 trở lên
+- Bun 1.3 trở lên (khuyến nghị) hoặc npm
+- Một project Supabase
 
-## Use Cases
+### Cài đặt
 
-A few things you can build with it:
+```bash
+git clone https://github.com/Datghb/GroupHack.git
+cd GroupHack
+bun install
+cp env.example.txt .env.local
+```
 
-- SaaS admin dashboards
-- Internal tools and operations panels
-- Analytics dashboards
-- Client project admin panels
-- A boilerplate for new Next.js shadcn projects
+Cập nhật `.env.local`:
 
-## Pages
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_SECRET_KEY=your-secret-key
 
-| Page                                                                                                                                                                   | Notes                                                                                                                                                                     |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [Signup / Signin](https://go.clerk.com/ILdYhn7)                                                                                                                        | Auth handled by Clerk, with passwordless sign-in, social logins, and enterprise SSO.                                                                                      |
-| [Dashboard Overview](https://shadcn-dashboard.kiranism.dev/dashboard)                                                                                                  | Cards and Recharts graphs. Parallel routes give each section its own loading and error state.                                                                             |
-| [Product List (Table)](https://shadcn-dashboard.kiranism.dev/dashboard/product)                                                                                        | TanStack Table plus React Query (server prefetch, client cache) with nuqs URL state for search, filter, and pagination. `shallow: true` keeps interactions on the client. |
-| [Create Product Form](https://shadcn-dashboard.kiranism.dev/dashboard/product/new)                                                                                     | TanStack Form and Zod with `useMutation` for create and update. Cache is invalidated on success.                                                                          |
-| [Users (Table)](https://shadcn-dashboard.kiranism.dev/dashboard/users)                                                                                                 | Same setup as Products: React Query with nuqs, server prefetch, and client-side pagination and filtering.                                                                 |
-| [React Query Demo](https://shadcn-dashboard.kiranism.dev/dashboard/react-query)                                                                                        | A Pokemon API example showing the server prefetch, `HydrationBoundary`, and `useSuspenseQuery` pattern with client-side cache.                                            |
-| [Profile](https://shadcn-dashboard.kiranism.dev/dashboard/profile)                                                                                                     | Clerk's account management UI for profile and security settings.                                                                                                          |
-| [Kanban Board](https://shadcn-dashboard.kiranism.dev/dashboard/kanban)                                                                                                 | Drag-and-drop task board built with dnd-kit and Zustand. Column sorting, priority badges, assignees, and due dates.                                                       |
-| [Chat](https://shadcn-dashboard.kiranism.dev/dashboard/chat)                                                                                                           | Messaging UI with a conversation list, message bubbles, quick replies, attachments, and an auto-reply demo. Multi-panel layout that works on mobile.                      |
-| [Notifications](https://shadcn-dashboard.kiranism.dev/dashboard/notifications)                                                                                         | Notification center with a header badge, popover preview, and a full page with All / Unread / Read tabs. Includes mark-as-read and mark-all-as-read.                      |
-| [Workspaces](https://shadcn-dashboard.kiranism.dev/dashboard/workspaces)                                                                                               | Organization management using Clerk's `<OrganizationList />`. View, create, and switch between organizations.                                                             |
-| [Team Management](https://shadcn-dashboard.kiranism.dev/dashboard/workspaces/team)                                                                                     | Team management using Clerk's `<OrganizationProfile />`. Manage members, roles, permissions, security, and org details. Needs an active organization.                     |
-| [Billing & Plans](https://shadcn-dashboard.kiranism.dev/dashboard/billing)                                                                                             | Billing page using Clerk's `<PricingTable />`. View plans, subscribe, and manage subscriptions. Needs an active organization.                                             |
-| [Exclusive Page](https://shadcn-dashboard.kiranism.dev/dashboard/exclusive)                                                                                            | Plan-based access control with Clerk's `<Protect>`. Only available to organizations on the Pro plan, with a fallback UI for everyone else.                                |
-| [Not Found](https://shadcn-dashboard.kiranism.dev/dashboard/notfound)                                                                                                  | A root-level not-found page.                                                                                                                                              |
-| [Global Error](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy26q2-nextjs&utm_content=github-banner-project-tryfree) | A shared error page wired to Sentry for logging, reports, and session replay.                                                                                             |
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SENTRY_DISABLED=true
+```
 
-## Folder Structure
+> `SUPABASE_SECRET_KEY` chỉ được sử dụng phía server. Không đổi tên biến này thành biến có tiền tố `NEXT_PUBLIC_` và không commit `.env.local`.
 
-```plaintext
+Áp dụng database migrations:
+
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
+```
+
+Đồng bộ cấu hình Auth trong `supabase/config.toml` nếu đang dùng project riêng:
+
+```bash
+npx supabase config push
+```
+
+Khởi động development server:
+
+```bash
+bun run dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000).
+
+## Cấu hình Supabase Auth
+
+Trong Supabase Dashboard, vào **Authentication → URL Configuration** và cấu hình:
+
+- Site URL local: `http://localhost:3000`
+- Redirect URL local: `http://localhost:3000/**`
+- Site URL production: domain Vercel của dự án
+- Redirect URL production: `https://your-domain.vercel.app/**`
+
+Repo hiện cấu hình production cho `https://vicheck-one.vercel.app` trong `supabase/config.toml`.
+
+Người dùng mới mặc định có vai trò `STUDENT`. Để cấp vai trò giáo viên trong môi trường thử nghiệm, cập nhật trường `role` của người dùng trong bảng `public.profiles` thành `TEACHER`.
+
+## Scripts
+
+```bash
+bun run dev          # chạy development server
+bun run test         # chạy unit tests
+bun run lint         # kiểm tra lint
+bun run lint:strict  # lint với zero-warning policy
+bun run build        # production build
+bun run start        # chạy production server đã build
+```
+
+## Cấu trúc chính
+
+```text
 src/
-├── app/                           # Next.js App Router directory
-│   ├── auth/                      # Auth pages (sign-in, sign-up)
-│   ├── dashboard/                 # Dashboard route group
-│   │   ├── overview/              # Analytics with parallel routes
-│   │   ├── product/               # Product CRUD pages (React Query)
-│   │   ├── users/                 # Users table (React Query + nuqs)
-│   │   ├── react-query/           # React Query demo page
-│   │   ├── kanban/                # Task board page
-│   │   ├── chat/                  # Messaging page
-│   │   ├── notifications/         # Notifications page
-│   │   ├── workspaces/            # Org management & teams
-│   │   ├── billing/               # Billing & plans
-│   │   ├── profile/               # User profile
-│   │   └── exclusive/             # Plan-gated page
-│   └── api/                       # API routes
-│
-├── components/                    # Shared components
-│   ├── ui/                        # UI primitives (buttons, inputs, dialogs, etc.)
-│   ├── layout/                    # Layout components (header, sidebar, etc.)
-│   ├── themes/                    # Theme system (selector, mode toggle, config)
-│   └── kbar/                      # Command+K interface
-│
-├── features/                      # Feature-based modules
-│   ├── overview/                  # Dashboard analytics (charts, cards)
-│   ├── products/                  # Product listing, form, tables (React Query)
-│   ├── users/                     # User management table (React Query)
-│   ├── react-query-demo/          # React Query demo (Pokemon API)
-│   ├── kanban/                    # Drag-drop task board
-│   ├── chat/                      # Messaging (conversations, bubbles, composer)
-│   ├── notifications/             # Notification center & store
-│   ├── auth/                      # Auth components
-│   └── profile/                   # Profile form schemas
-│
-├── lib/                           # Core utilities (query-client, searchparams, etc.)
-├── hooks/                         # Custom hooks
-├── config/                        # Navigation, infobar, data table config
-├── constants/                     # Mock data
-├── styles/                        # Global CSS & theme files
-│   └── themes/                    # Individual theme CSS files
-└── types/                         # TypeScript types
+├── app/
+│   ├── api/                    # Route handlers và kiểm tra quyền server-side
+│   ├── auth/                   # Đăng nhập, đăng ký và OAuth callback
+│   ├── student/                # Luồng dành cho học sinh
+│   └── teacher/                # Luồng dành cho giáo viên
+├── features/
+│   ├── auth/                   # Giao diện Supabase Auth
+│   ├── classroom/              # Lớp, bài tập, nhóm và checkpoint
+│   └── profile/                # Hồ sơ người dùng
+├── components/                 # UI và layout dùng chung
+└── lib/                        # Supabase clients, auth và access control
+
+supabase/
+├── config.toml                 # Auth URL và cấu hình Supabase
+└── migrations/                 # PostgreSQL schema migrations
 ```
 
-## Getting Started
+## Mô hình dữ liệu
 
-> [!NOTE]
-> This starter uses Next.js 16 (App Router) with React 19 and shadcn/ui. To run it locally:
+Các bảng nghiệp vụ chính:
 
-Clone the repo:
+- `profiles`: hồ sơ và vai trò người dùng.
+- `classrooms`: lớp học do giáo viên quản lý.
+- `class_enrollments`: học sinh và khóa được phân công.
+- `classroom_courses`: các khóa trong lớp.
+- `assignments`: bài tập của từng khóa.
+- `assignment_checkpoints`: checkpoint cá nhân hoặc theo nhóm.
+- `assignment_teams` và `assignment_team_members`: nhóm theo bài tập.
+- `assignment_team_join_requests`: yêu cầu gia nhập nhóm.
+- `checkpoint_completions`: trạng thái hoàn thành checkpoint.
 
-```
-git clone https://github.com/Kiranism/next-shadcn-dashboard-starter.git
-```
+Các API sử dụng Supabase secret key ở server và thực hiện kiểm tra quyền trước khi truy cập dữ liệu. RLS vẫn được bật trên các bảng nghiệp vụ để ngăn truy cập trực tiếp từ client.
 
-- `bun install`
-- Copy the example env file: `cp env.example.txt .env.local`
-- Fill in the required variables in `.env.local`
-- `bun run dev`
-
-##### Environment variables
-
-See `env.example.txt` for the variables you need. They cover authentication and error tracking.
-
-##### Clerk setup
-
-For setting up Clerk auth (including organizations, workspaces, and teams), see [clerk_setup.md](./docs/clerk_setup.md).
-
-The app should now be running at http://localhost:3000.
-
-> [!WARNING]
-> After cloning or forking, be careful when pulling the latest changes. Updates can cause merge conflicts.
-
----
-
-## Cleanup Script: Start Minimal in 60 Seconds
-
-Most starters make you hand-delete demo pages and rip out dependencies. This one ships with a cleanup script that removes the optional features you don't need (folders, files, dependencies, docs, and env entries), leaving a minimal base to build on. Run `--list` to see what's removable:
+## Kiểm thử trước khi phát hành
 
 ```bash
-bun run cleanup --interactive    # interactive mode
-bun run cleanup --list           # see available features
-bun run cleanup --dry-run chat   # preview before removing
-bun run cleanup kanban chat      # remove specific features
+bun run test
+bun run lint:strict
+bun run build
 ```
 
-Run `bun run cleanup --help` for all options (with npm, pass flags after `--`: `npm run cleanup -- --list`). The replacement files it writes live in `scripts/cleanup-templates/` as real, typechecked code. When you're done, delete `scripts/cleanup.js`, `scripts/cleanup-templates/`, and the `cleanup` entry in `package.json`.
+Hiện tại bộ unit test tập trung vào deadline, phạm vi checkpoint, trạng thái hoàn thành và cách tính tiến độ học sinh. Khi mở rộng production, nên bổ sung integration test cho API và Playwright E2E cho các luồng giáo viên/học sinh quan trọng.
 
-## FAQ
+## Deploy lên Vercel
 
-**Is it production ready?**
-Yes. Every feature is a complete, working implementation: authentication, CRUD flows, table search/filter/sort/pagination, and form validation with mutations all function end-to-end. It's a starting point for real applications, not a visual mockup.
+1. Import repository vào Vercel hoặc liên kết bằng Vercel CLI.
+2. Thêm các biến môi trường được liệt kê ở phần cài đặt.
+3. Đặt `NEXT_PUBLIC_APP_URL` thành domain production.
+4. Đặt `NEXT_PUBLIC_SENTRY_DISABLED=true` nếu chưa cấu hình Sentry.
+5. Cập nhật Site URL và Redirect URLs trong Supabase Auth.
+6. Chạy migrations trước khi mời người dùng thử nghiệm.
 
-**Is it free for commercial use?**
-Yes. MIT-licensed and free for both personal and commercial projects: no paid tier, no license keys.
-
-**Can I use it without Clerk?**
-Yes. Run `bun run cleanup clerk` to remove Clerk authentication (along with organizations and billing) and wire in your own auth solution.
-
-**How do I remove demo pages or features I don't need?**
-Run `bun run cleanup --interactive` and pick what to strip, or `bun run cleanup --list` to see what can be removed.
-
-**Does it support Next.js 16, React 19, and Tailwind CSS v4?**
-Yes. The template is built on Next.js 16 (App Router), React 19, and Tailwind CSS v4, with shadcn/ui on Base UI primitives, and is actively maintained to track new releases.
-
-**Can I use npm instead of Bun?**
-Yes. Bun is preferred, but npm works too, and the repo even ships both Node.js and Bun Dockerfiles for deployment.
-
-**Does it work with AI coding assistants?**
-Yes. The repo ships AGENTS.md and CLAUDE.md with the project's conventions, plus a bundled Claude Code skill (`.claude/skills/kiranism-shadcn-dashboard`) that teaches agents how to add pages, tables, forms, and navigation the template way. Works with Claude Code, Cursor, and any tool that reads AGENTS.md.
-
-## Deploy
-
-The project includes Dockerfiles (`Dockerfile` for Node.js, `Dockerfile.bun` for Bun) that use standalone output mode. For other options, see the [Next.js deployment docs](https://nextjs.org/docs/app/getting-started/deploying).
-
-### Docker
-
-Build the image:
+Deploy bằng CLI:
 
 ```bash
-# Node.js
-docker build \
-  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -t vicheck .
-
-# OR Bun
-docker build -f Dockerfile.bun \
-  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -t vicheck .
+npx vercel login
+npx vercel link
+npx vercel deploy --prod
 ```
 
-Run the container:
+Production hiện tại: **https://vicheck-one.vercel.app**
 
-```bash
-docker run -d -p 3000:3000 \
-  -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -e CLERK_SECRET_KEY=sk_live_xxxxx \
-  --restart unless-stopped \
-  --name vicheck \
-  vicheck
-```
+## Giới hạn môi trường thử nghiệm
 
-### Support
+ViCheck hiện được vận hành bằng Vercel và Supabase Free. Đây là cấu hình phù hợp cho pilot nhỏ; nên giới hạn khoảng 50 người thao tác đồng thời cho đến khi có kết quả load test. Theo dõi database size, egress, function invocations và lỗi API trong dashboard của hai nền tảng.
 
-If this template saved you some time, a star is appreciated. You can also [buy me a coffee](https://buymeacoffee.com/kir4n) if you'd like.
+## Đóng góp
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat-square&logo=buymeacoffee)](https://buymeacoffee.com/kir4n)
-
-<!--
-
-SEO keywords:
-
-open source admin dashboard, nextjs admin dashboard, nextjs dashboard template,
-
-shadcn ui dashboard, admin dashboard starter, next.js 16, typescript dashboard,
-
-dashboard ui template, nextjs shadcn admin panel, react admin dashboard,
-
-tailwind css admin dashboard, production ready admin dashboard template,
-
-free react admin dashboard, nextjs 16 dashboard starter, working crud dashboard
-
--->
+1. Tạo branch từ `main`.
+2. Thực hiện thay đổi và bổ sung test phù hợp.
+3. Chạy test, lint và production build.
+4. Mở pull request, mô tả thay đổi và cách kiểm thử.

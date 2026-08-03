@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       .single();
     if (error) throw error;
     const { error: courseError } = await db.from('classroom_courses').insert([
-      { classroom_id: data.id, name: 'Khóa 1', position: 1 },
-      { classroom_id: data.id, name: 'Khóa 2', position: 2 }
+      { classroom_id: data.id, name: 'Khóa 3', position: 1 },
+      { classroom_id: data.id, name: 'Khóa 4', position: 2 }
     ]);
     if (courseError) {
       await db.from('classrooms').delete().eq('id', data.id);
