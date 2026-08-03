@@ -8,14 +8,7 @@ import { z } from 'zod';
 import { Icons } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -29,8 +22,7 @@ import { readCustomClassrooms, saveCustomClassrooms } from '../api/browser-store
 import type { Classroom } from '../domain/types';
 
 const classroomSchema = z.object({
-  name: z.string().trim().min(3, 'Tên lớp cần ít nhất 3 ký tự'),
-  description: z.string().trim().max(240, 'Mô tả không quá 240 ký tự')
+  name: z.string().trim().min(3, 'Tên lớp cần ít nhất 3 ký tự')
 });
 type ClassroomFormValues = z.infer<typeof classroomSchema>;
 
@@ -38,20 +30,20 @@ export function TeacherClassManager({ seededClassrooms }: { seededClassrooms: Cl
   const { user } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [customClassrooms, setCustomClassrooms] = useState<Classroom[]>([]);
-  const { FormTextField, FormTextareaField } = useFormFields<ClassroomFormValues>();
+  const { FormTextField } = useFormFields<ClassroomFormValues>();
 
   useEffect(() => {
     setCustomClassrooms(readCustomClassrooms());
   }, []);
 
   const form = useAppForm({
-    defaultValues: { name: '', description: '' } as ClassroomFormValues,
+    defaultValues: { name: '' } as ClassroomFormValues,
     validators: { onSubmit: classroomSchema },
     onSubmit: ({ value }) => {
       const classroom: Classroom = {
         id: `class-${crypto.randomUUID()}`,
         name: value.name,
-        description: value.description,
+        description: '',
         teacherId: user?.id ?? 'teacher-demo',
         archived: false,
         studentCount: 0,
@@ -81,7 +73,6 @@ export function TeacherClassManager({ seededClassrooms }: { seededClassrooms: Cl
           <Card key={classroom.id}>
             <CardHeader>
               <CardTitle>{classroom.name}</CardTitle>
-              <CardDescription>{classroom.description || 'Lớp chưa có mô tả.'}</CardDescription>
               <CardAction>
                 <Badge variant='secondary'>Đang mở</Badge>
               </CardAction>
@@ -124,11 +115,6 @@ export function TeacherClassManager({ seededClassrooms }: { seededClassrooms: Cl
                 placeholder='Ví dụ: Lập trình Web 2026'
                 required
               />
-              <FormTextareaField
-                name='description'
-                label='Mô tả lớp học (không bắt buộc)'
-                placeholder='Mục tiêu và nội dung chính của lớp'
-              />
             </form.Form>
           </form.AppForm>
           <DialogFooter>
@@ -156,7 +142,6 @@ export function TeacherCustomClassDetail({ classId }: { classId: string }) {
     <Card>
       <CardHeader>
         <CardTitle>{classroom.name}</CardTitle>
-        <CardDescription>{classroom.description || 'Lớp chưa có mô tả.'}</CardDescription>
         <CardAction>
           <Badge variant='secondary'>Đang mở</Badge>
         </CardAction>

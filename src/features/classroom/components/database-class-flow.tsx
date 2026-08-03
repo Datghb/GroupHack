@@ -30,8 +30,7 @@ import { classroomKeys, classroomsQueryOptions, classroomTeamsQueryOptions } fro
 import { createClassroom, createTeam, joinClassroom, joinExistingTeam } from '../api/service';
 
 const classSchema = z.object({
-  name: z.string().trim().min(3, 'Tên lớp cần ít nhất 3 ký tự'),
-  description: z.string().trim().max(240, 'Mô tả không quá 240 ký tự')
+  name: z.string().trim().min(3, 'Tên lớp cần ít nhất 3 ký tự')
 });
 const teamSchema = z.object({
   name: z.string().trim().min(2, 'Tên nhóm cần ít nhất 2 ký tự'),
@@ -49,12 +48,12 @@ export function TeacherDatabaseClasses() {
     mutationFn: createClassroom,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: classroomKeys.all })
   });
-  const { FormTextField, FormTextareaField } = useFormFields<ClassValues>();
+  const { FormTextField } = useFormFields<ClassValues>();
   const form = useAppForm({
-    defaultValues: { name: '', description: '' } as ClassValues,
+    defaultValues: { name: '' } as ClassValues,
     validators: { onSubmit: classSchema },
     onSubmit: async ({ value }) => {
-      await mutation.mutateAsync(value);
+      await mutation.mutateAsync({ ...value, description: '' });
       form.reset();
       setOpen(false);
       toast.success('Tạo lớp thành công');
@@ -70,24 +69,33 @@ export function TeacherDatabaseClasses() {
           Tạo lớp
         </Button>
       </div>
-      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(17rem,20rem))]'>
         {data.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <CardTitle>{item.name}</CardTitle>
-              <CardDescription>{item.description || 'Lớp chưa có mô tả.'}</CardDescription>
-              <CardAction>
-                <Badge variant='secondary'>Đang mở</Badge>
-              </CardAction>
+          <Card
+            key={item.id}
+            size='sm'
+            className='w-full transition-[box-shadow,transform] motion-safe:hover:-translate-y-0.5 hover:shadow-md'
+          >
+            <CardHeader className='grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3'>
+              <div className='flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                <Icons.workspace className='size-5' aria-hidden='true' />
+              </div>
+              <CardTitle className='truncate text-base'>{item.name}</CardTitle>
+              <Badge variant='secondary' className='text-xs'>
+                Đang mở
+              </Badge>
             </CardHeader>
-            <CardContent>
+            <CardContent className='flex items-center justify-between border-t pt-3'>
+              <span className='text-xs text-muted-foreground'>Quản lý bài tập & checkpoint</span>
               <Button
                 variant='outline'
+                size='sm'
                 render={
                   <Link aria-label={`Mở lớp ${item.name}`} href={`/teacher/classes/${item.id}`} />
                 }
               >
                 Mở lớp
+                <Icons.arrowRight aria-hidden='true' />
               </Button>
             </CardContent>
           </Card>
@@ -102,7 +110,6 @@ export function TeacherDatabaseClasses() {
           <form.AppForm>
             <form.Form id='db-class-form' className='p-0'>
               <FormTextField name='name' label='Tên lớp' required />
-              <FormTextareaField name='description' label='Mô tả (không bắt buộc)' />
             </form.Form>
           </form.AppForm>
           <DialogFooter>
@@ -124,35 +131,50 @@ export function StudentDatabaseClasses() {
   const { data = [], isPending, error } = useQuery({ ...classroomsQueryOptions(), retry: false });
   const mutation = useMutation({
     mutationFn: joinClassroom,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: classroomKeys.all })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: classroomKeys.all });
+      toast.success('Đã tham gia lớp.');
+    },
+    onError: (joinError) => toast.error(joinError.message)
   });
   if (isPending) return <Skeleton className='h-64 w-full' />;
   if (error) return <p className='text-destructive'>{error.message}</p>;
   return (
-    <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+    <div className='grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(17rem,20rem))]'>
       {data.map((item) => (
-        <Card key={item.id}>
-          <CardHeader>
-            <CardTitle>{item.name}</CardTitle>
-            <CardDescription>{item.description || 'Lớp chưa có mô tả.'}</CardDescription>
-            <CardAction>
-              <Badge variant={item.joined ? 'secondary' : 'outline'}>
-                {item.joined ? 'Đã tham gia' : 'Lớp đang mở'}
-              </Badge>
-            </CardAction>
+        <Card
+          key={item.id}
+          size='sm'
+          className='w-full transition-[box-shadow,transform] motion-safe:hover:-translate-y-0.5 hover:shadow-md'
+        >
+          <CardHeader className='grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3'>
+            <div className='flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+              <Icons.workspace className='size-5' aria-hidden='true' />
+            </div>
+            <CardTitle className='truncate text-base'>{item.name}</CardTitle>
+            <Badge variant={item.joined ? 'secondary' : 'outline'} className='text-xs'>
+              {item.joined ? 'Đã tham gia' : 'Đang mở'}
+            </Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className='flex items-center justify-between border-t pt-3'>
+            <span className='text-xs text-muted-foreground'>Bài tập & nhóm học tập</span>
             {item.joined ? (
               <Button
                 variant='outline'
+                size='sm'
                 render={
                   <Link aria-label={`Vào lớp ${item.name}`} href={`/student/classes/${item.id}`} />
                 }
               >
                 Vào lớp
+                <Icons.arrowRight aria-hidden='true' />
               </Button>
             ) : (
-              <Button disabled={mutation.isPending} onClick={() => mutation.mutate(item.id)}>
+              <Button
+                size='sm'
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate(item.id)}
+              >
                 Tham gia lớp
               </Button>
             )}
@@ -268,6 +290,7 @@ export function DatabaseClassWorkspace({ classId }: { classId: string }) {
                       <field.FieldLabel htmlFor={field.name}>Số thành viên tối đa</field.FieldLabel>
                       <input
                         id={field.name}
+                        aria-label='Số thành viên tối đa'
                         className='border-input h-9 w-full rounded-md border px-3'
                         type='number'
                         min={2}
@@ -306,7 +329,6 @@ export function TeacherDatabaseClassDetail({ classId }: { classId: string }) {
     <Card>
       <CardHeader>
         <CardTitle>{classroom.name}</CardTitle>
-        <CardDescription>{classroom.description || 'Lớp chưa có mô tả.'}</CardDescription>
         <CardAction>
           <Badge variant='secondary'>Đang mở</Badge>
         </CardAction>

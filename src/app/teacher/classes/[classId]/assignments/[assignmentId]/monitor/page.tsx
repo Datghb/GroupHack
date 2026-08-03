@@ -1,16 +1,19 @@
 import PageContainer from '@/components/layout/page-container';
-import { CommunityProgress } from '@/features/classroom/components/community-progress';
 import { TeamMonitor } from '@/features/classroom/components/team-monitor';
 
-export default function AssignmentMonitorPage() {
+export default async function AssignmentMonitorPage({
+  params
+}: {
+  params: Promise<{ classId: string; assignmentId: string }>;
+}) {
+  const { classId, assignmentId } = await params;
   return (
     <PageContainer
-      pageTitle='Theo dõi · Sản phẩm cộng đồng số'
-      pageDescription='Theo dõi tiến độ nhóm theo thời gian thực và phát hiện nhóm cần hỗ trợ.'
+      pageTitle='Theo dõi tiến độ bài tập'
+      pageDescription='Dữ liệu hoàn thành checkpoint được cập nhật từ các nhóm sinh viên.'
     >
       <div className='flex flex-col gap-4'>
-        <TeamMonitor />
-        <CommunityProgress />
+        <TeamMonitor classId={classId} assignmentId={assignmentId} />
       </div>
     </PageContainer>
   );

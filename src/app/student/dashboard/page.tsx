@@ -1,13 +1,13 @@
 import PageContainer from '@/components/layout/page-container';
-import { StudentDatabaseClasses } from '@/features/classroom/components/database-class-flow';
+import { StudentOverview } from '@/features/classroom/components/student-overview';
 
 export default function StudentDashboardPage() {
   return (
     <PageContainer
-      pageTitle='Lớp học dành cho bạn'
-      pageDescription='Chọn một lớp do giáo viên tạo, tham gia lớp rồi tạo hoặc tham gia nhóm.'
+      pageTitle='Tổng quan'
+      pageDescription='Theo dõi lớp, bài tập, nhóm và checkpoint của bạn.'
     >
-      <StudentDatabaseClasses />
+      <StudentOverview />
     </PageContainer>
   );
 }

@@ -14,12 +14,26 @@ export async function POST(_: Request, { params }: { params: Promise<{ classId: 
     .maybeSingle();
   if (!classroom || classroom.archived)
     return NextResponse.json({ error: 'Lớp không tồn tại hoặc đã đóng.' }, { status: 404 });
-  const { error } = await db
-    .from('class_enrollments')
-    .upsert(
-      { classroom_id: classId, student_id: userId },
-      { onConflict: 'classroom_id,student_id', ignoreDuplicates: true }
+  const { data: defaultCourse } = await db
+    .from('classroom_courses')
+    .select('id')
+    .eq('classroom_id', classId)
+    .order('position')
+    .limit(1)
+    .maybeSingle();
+  if (!defaultCourse)
+    return NextResponse.json(
+      { error: 'Lớp chưa được cấu hình khóa học. Giáo viên cần hoàn tất cấu hình.' },
+      { status: 409 }
     );
+  const { error } = await db.from('class_enrollments').upsert(
+    {
+      classroom_id: classId,
+      student_id: userId,
+      course_id: defaultCourse.id
+    },
+    { onConflict: 'classroom_id,student_id', ignoreDuplicates: true }
+  );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data: { joined: true } });
 }

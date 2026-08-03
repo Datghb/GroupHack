@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getApiAuth } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { canAccessAssignment } from '@/lib/classroom-access';
 export async function POST(
   _request: Request,
   {
@@ -17,6 +18,15 @@ export async function POST(
   if (role !== 'STUDENT')
     return NextResponse.json({ error: 'Chỉ học sinh được tham gia nhóm.' }, { status: 403 });
   const db = getSupabaseAdmin();
+  if (!(await canAccessAssignment(userId, role, classId, assignmentId)))
+    return NextResponse.json({ error: 'Bài tập không thuộc khóa bạn đang học.' }, { status: 403 });
+  const { data: enrollment } = await db
+    .from('class_enrollments')
+    .select('id')
+    .eq('classroom_id', classId)
+    .eq('student_id', userId)
+    .maybeSingle();
+  if (!enrollment) return NextResponse.json({ error: 'Bạn chưa tham gia lớp.' }, { status: 403 });
   const { data: team } = await db
     .from('assignment_teams')
     .select('*')
@@ -26,23 +36,32 @@ export async function POST(
     .maybeSingle();
   if (!team || !team.open)
     return NextResponse.json({ error: 'Nhóm không tồn tại hoặc đã đóng.' }, { status: 404 });
-  const { count } = await db
+  const { data: existingMember } = await db
     .from('assignment_team_members')
-    .select('id', { count: 'exact', head: true })
-    .eq('team_id', teamId);
-  if ((count ?? 0) >= team.capacity)
-    return NextResponse.json({ error: 'Nhóm đã đủ thành viên.' }, { status: 409 });
-  const { error } = await db.from('assignment_team_members').insert({
-    team_id: teamId,
-    assignment_id: assignmentId,
-    student_id: userId
-  });
-  if (error)
-    return NextResponse.json(
+    .select('id')
+    .eq('assignment_id', assignmentId)
+    .eq('student_id', userId)
+    .maybeSingle();
+  if (existingMember)
+    return NextResponse.json({ error: 'Bạn đã có nhóm trong bài tập này.' }, { status: 409 });
+  const { data: request, error } = await db
+    .from('assignment_team_join_requests')
+    .upsert(
       {
-        error: error.code === '23505' ? 'Bạn đã có nhóm trong bài tập này.' : error.message
+        team_id: teamId,
+        assignment_id: assignmentId,
+        student_id: userId,
+        status: 'PENDING',
+        reviewed_at: null,
+        reviewed_by: null
       },
-      { status: error.code === '23505' ? 409 : 500 }
-    );
-  return NextResponse.json({ data: { id: team.id } });
+      { onConflict: 'assignment_id,student_id' }
+    )
+    .select('id,status')
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(
+    { data: { id: request.id, teamId, status: request.status } },
+    { status: 201 }
+  );
 }

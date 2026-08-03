@@ -3,29 +3,31 @@ import { useMemo } from 'react';
 import type { NavItem, NavGroup } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
+function filterItems(items: NavItem[], role?: string): NavItem[] {
+  if (!role) return [];
+  return items
+    .filter((item) => !item.access?.role || item.access.role === role)
+    .map((item) => ({
+      ...item,
+      items: item.items?.filter((child) => !child.access?.role || child.access.role === role)
+    }));
+}
+
 export function useFilteredNavItems(items: NavItem[]) {
   const { user } = useCurrentUser();
-  return useMemo(() => {
-    const allowed = (item: NavItem) => !item.access?.role || item.access.role === user?.role;
-    return items.filter(allowed).map((item) => ({
-      ...item,
-      items: item.items?.filter(allowed)
-    }));
-  }, [items, user?.role]);
+  return useMemo(() => filterItems(items, user?.role), [items, user?.role]);
 }
 
 export function useFilteredNavGroups(groups: NavGroup[]) {
-  const items = useFilteredNavItems(
-    useMemo(() => groups.flatMap((group) => group.items), [groups])
-  );
+  const { user } = useCurrentUser();
   return useMemo(
     () =>
       groups
         .map((group) => ({
           ...group,
-          items: items.filter((item) => group.items.some((entry) => entry.title === item.title))
+          items: filterItems(group.items, user?.role)
         }))
         .filter((group) => group.items.length > 0),
-    [groups, items]
+    [groups, user?.role]
   );
 }
