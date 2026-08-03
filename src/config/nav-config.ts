@@ -52,13 +52,6 @@ export const navGroups: NavGroup[] = [
         access: { role: 'TEACHER' }
       },
       {
-        title: 'Theo dõi tiến độ',
-        url: '/teacher/classes/web-2026/assignments/assignment-1/monitor',
-        icon: 'trendingUp',
-        items: [],
-        access: { role: 'TEACHER' }
-      },
-      {
         title: 'Hoạt động',
         url: '/teacher/dashboard#activity',
         icon: 'clock',
@@ -78,36 +71,18 @@ export const navGroups: NavGroup[] = [
         access: { role: 'STUDENT' }
       },
       {
-        title: 'Khám phá lớp học',
+        title: 'Lớp học',
         url: '/student/classes',
-        icon: 'search',
+        icon: 'workspace',
         items: [],
         access: { role: 'STUDENT' }
       },
-      {
-        title: 'Nhóm của tôi',
-        url: '/student/classes/web-2026/teams/alpha',
-        icon: 'teams',
-        items: [],
-        access: { role: 'STUDENT' }
-      },
-      {
-        title: 'Checkpoint',
-        url: '/student/classes/web-2026/assignments/assignment-1',
-        icon: 'checks',
-        items: [],
-        access: { role: 'STUDENT' }
-      }
-    ]
-  },
-  {
-    label: 'Tài khoản',
-    items: [
       {
         title: 'Hồ sơ',
         url: '/dashboard/profile',
         icon: 'account',
-        items: []
+        items: [],
+        access: { role: 'STUDENT' }
       }
     ]
   }

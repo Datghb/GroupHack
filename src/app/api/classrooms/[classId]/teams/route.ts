@@ -2,14 +2,17 @@ import { getApiAuth } from '@/lib/api-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { canAccessClassroom } from '@/lib/classroom-access';
 const schema = z.object({
   name: z.string().trim().min(2).max(100),
   description: z.string().trim().max(160),
   capacity: z.number().int().min(2).max(10)
 });
 export async function GET(_: Request, { params }: { params: Promise<{ classId: string }> }) {
-  const [{ userId }, { classId }] = await Promise.all([getApiAuth(), params]);
+  const [{ userId, role }, { classId }] = await Promise.all([getApiAuth(), params]);
   if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 });
+  if (!(await canAccessClassroom(userId, role, classId)))
+    return NextResponse.json({ error: 'Bạn không có quyền truy cập lớp này.' }, { status: 403 });
   const db = getSupabaseAdmin();
   const { data: teams, error } = await db
     .from('teams')

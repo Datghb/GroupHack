@@ -357,6 +357,7 @@ export function StudentClassTeamFlow({ classroom }: { classroom: Classroom }) {
                       <field.FieldLabel htmlFor={field.name}>Số thành viên tối đa</field.FieldLabel>
                       <input
                         id={field.name}
+                        aria-label='Số thành viên tối đa'
                         className='border-input bg-background h-9 w-full rounded-md border px-3'
                         type='number'
                         min={2}

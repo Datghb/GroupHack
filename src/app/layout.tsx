@@ -20,10 +20,18 @@ export const metadata: Metadata = {
     ? { metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL) }
     : {}),
   title: {
-    default: 'Theo dõi tiến độ lớp học',
-    template: '%s | Theo dõi tiến độ lớp học'
+    default: 'VICheck',
+    template: '%s | VICheck'
   },
-  description: 'Nền tảng theo dõi tiến độ học tập và hoạt động nhóm trong lớp học.'
+  applicationName: 'VICheck',
+  description: 'Nền tảng theo dõi tiến độ học tập và hoạt động nhóm trong lớp học.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' }
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180' }]
+  }
 };
 
 export const viewport: Viewport = {

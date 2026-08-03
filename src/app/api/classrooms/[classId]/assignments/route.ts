@@ -2,25 +2,49 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getApiAuth } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { canAccessClassroom } from '@/lib/classroom-access';
 
 const schema = z.object({
   title: z.string().trim().min(3).max(160),
   description: z.string().trim().max(1000).default(''),
   dueAt: z.string().optional().default(''),
+  courseId: z.string().uuid(),
   checkpoints: z
     .array(
       z.object({
         title: z.string().trim().min(2).max(160),
         description: z.string().trim().max(500).default(''),
-        dueAt: z.string().optional().default('')
+        dueAt: z.string().optional().default(''),
+        scope: z.enum(['INDIVIDUAL', 'TEAM'])
       })
     )
     .min(1)
     .max(20)
 });
-const mapAssignment = (item: any, checkpoints: any[] = []) => ({
+const listSchema = z.object({
+  courseId: z.string().uuid().optional()
+});
+interface AssignmentRow {
+  id: string;
+  classroom_id: string;
+  course_id: string | null;
+  title: string;
+  description: string;
+  due_at: string | null;
+}
+interface CheckpointRow {
+  id: string;
+  assignment_id: string;
+  title: string;
+  description: string;
+  due_at: string | null;
+  position: number;
+  scope: 'INDIVIDUAL' | 'TEAM';
+}
+const mapAssignment = (item: AssignmentRow, checkpoints: CheckpointRow[] = []) => ({
   id: item.id,
   classroomId: item.classroom_id,
+  courseId: item.course_id,
   title: item.title,
   description: item.description,
   dueAt: item.due_at,
@@ -29,28 +53,40 @@ const mapAssignment = (item: any, checkpoints: any[] = []) => ({
     title: checkpoint.title,
     description: checkpoint.description,
     dueAt: checkpoint.due_at,
-    position: checkpoint.position
+    position: checkpoint.position,
+    scope: checkpoint.scope
   }))
 });
 
-export async function GET(_request: Request, { params }: { params: Promise<{ classId: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ classId: string }> }) {
   const [{ userId, role }, { classId }] = await Promise.all([getApiAuth(), params]);
   if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 });
   const db = getSupabaseAdmin();
-  if (role === 'STUDENT') {
-    const { data } = await db
+  if (!(await canAccessClassroom(userId, role, classId)))
+    return NextResponse.json({ error: 'Bạn không có quyền truy cập lớp này.' }, { status: 403 });
+  const parsedQuery = listSchema.safeParse({
+    courseId: new URL(request.url).searchParams.get('courseId') ?? undefined
+  });
+  if (!parsedQuery.success)
+    return NextResponse.json({ error: 'Mã khóa học không hợp lệ.' }, { status: 400 });
+
+  let courseId = parsedQuery.data.courseId;
+  if (role !== 'TEACHER') {
+    const { data: enrollment } = await db
       .from('class_enrollments')
-      .select('id')
+      .select('course_id')
       .eq('classroom_id', classId)
       .eq('student_id', userId)
       .maybeSingle();
-    if (!data) return NextResponse.json({ error: 'Bạn chưa tham gia lớp.' }, { status: 403 });
+    if (!enrollment?.course_id)
+      return NextResponse.json({ error: 'Bạn chưa được xếp vào khóa học.' }, { status: 403 });
+    courseId = enrollment.course_id;
   }
-  const { data: assignments, error } = await db
-    .from('assignments')
-    .select('*')
-    .eq('classroom_id', classId)
-    .order('created_at', { ascending: false });
+  let assignmentQuery = db.from('assignments').select('*').eq('classroom_id', classId);
+  if (courseId) assignmentQuery = assignmentQuery.eq('course_id', courseId);
+  const { data: assignments, error } = await assignmentQuery.order('created_at', {
+    ascending: false
+  });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const ids = (assignments ?? []).map((item) => item.id);
   const { data: checkpoints } = ids.length
@@ -87,10 +123,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   if (!classroom)
     return NextResponse.json({ error: 'Bạn không phải giáo viên của lớp này.' }, { status: 403 });
   const value = parsed.data;
+  const { data: course } = await db
+    .from('classroom_courses')
+    .select('id')
+    .eq('id', value.courseId)
+    .eq('classroom_id', classId)
+    .maybeSingle();
+  if (!course) return NextResponse.json({ error: 'Khóa không thuộc lớp này.' }, { status: 400 });
   const { data: assignment, error } = await db
     .from('assignments')
     .insert({
       classroom_id: classId,
+      course_id: course.id,
       title: value.title,
       description: value.description,
       due_at: value.dueAt || null,
@@ -107,7 +151,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
         title: checkpoint.title,
         description: checkpoint.description,
         due_at: checkpoint.dueAt || null,
-        position
+        position,
+        scope: checkpoint.scope
       }))
     )
     .select();

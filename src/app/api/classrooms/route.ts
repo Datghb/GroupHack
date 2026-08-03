@@ -8,16 +8,14 @@ const schema = z.object({
   description: z.string().trim().max(240).optional().default('')
 });
 export async function GET() {
-  const { userId } = await getApiAuth();
+  const { userId, role } = await getApiAuth();
   if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 });
   try {
     const db = getSupabaseAdmin();
+    let classesQuery = db.from('classrooms').select('*').eq('archived', false);
+    if (role === 'TEACHER') classesQuery = classesQuery.eq('teacher_id', userId);
     const [{ data: classes, error }, { data: enrollments }] = await Promise.all([
-      db
-        .from('classrooms')
-        .select('*')
-        .eq('archived', false)
-        .order('created_at', { ascending: false }),
+      classesQuery.order('created_at', { ascending: false }),
       db.from('class_enrollments').select('classroom_id').eq('student_id', userId)
     ]);
     if (error) throw error;
@@ -49,12 +47,21 @@ export async function POST(request: Request) {
   if (!parsed.success)
     return NextResponse.json({ error: 'Thông tin lớp học không hợp lệ.' }, { status: 400 });
   try {
-    const { data, error } = await getSupabaseAdmin()
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
       .from('classrooms')
       .insert({ ...parsed.data, teacher_id: userId })
       .select()
       .single();
     if (error) throw error;
+    const { error: courseError } = await db.from('classroom_courses').insert([
+      { classroom_id: data.id, name: 'Khóa 1', position: 1 },
+      { classroom_id: data.id, name: 'Khóa 2', position: 2 }
+    ]);
+    if (courseError) {
+      await db.from('classrooms').delete().eq('id', data.id);
+      throw courseError;
+    }
     return NextResponse.json(
       {
         data: {

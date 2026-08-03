@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 export const metadata: Metadata = {
-  title: 'Theo dõi tiến độ lớp học',
+  title: 'VICheck',
   description: 'Không gian quản lý lớp học, nhóm và checkpoint.',
   robots: {
     index: false,
