@@ -5,8 +5,6 @@
 import { faker } from '@faker-js/faker';
 import { matchSorter } from 'match-sorter';
 
-export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export type User = {
   id: number;
   first_name: string;
@@ -66,8 +64,6 @@ export const fakeUsers = {
   },
 
   async createUser(data: Omit<User, 'id' | 'created_at' | 'updated_at'>) {
-    await delay(800);
-
     const newUser: User = {
       ...data,
       id: this.records.length + 1,
@@ -85,8 +81,6 @@ export const fakeUsers = {
   },
 
   async updateUser(id: number, data: Omit<User, 'id' | 'created_at' | 'updated_at'>) {
-    await delay(800);
-
     const index = this.records.findIndex((user) => user.id === id);
 
     if (index === -1) {
@@ -107,8 +101,6 @@ export const fakeUsers = {
   },
 
   async deleteUser(id: number) {
-    await delay(800);
-
     const index = this.records.findIndex((user) => user.id === id);
 
     if (index === -1) {
@@ -136,7 +128,6 @@ export const fakeUsers = {
     search?: string;
     sort?: string;
   }) {
-    await delay(800);
     const rolesArray = roles ? (Array.isArray(roles) ? roles : String(roles).split(/[.,]/)) : [];
     const allUsers = await this.getAll({
       roles: rolesArray,

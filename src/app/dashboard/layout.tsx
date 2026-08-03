@@ -6,6 +6,8 @@ import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { CurrentUserProvider } from '@/hooks/use-current-user';
+import { getCurrentUser } from '@/lib/classroom-auth';
 
 export const metadata: Metadata = {
   title: 'VICheck',
@@ -18,20 +20,22 @@ export const metadata: Metadata = {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Persisting the sidebar state in the cookie.
-  const cookieStore = await cookies();
+  const [cookieStore, user] = await Promise.all([cookies(), getCurrentUser()]);
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
-    <KBar>
-      <SidebarProvider defaultOpen={defaultOpen}>
-        <AppSidebar />
-        <SidebarInset>
-          <Header />
-          <InfobarProvider defaultOpen={false}>
-            {children}
-            <InfoSidebar side='right' />
-          </InfobarProvider>
-        </SidebarInset>
-      </SidebarProvider>
-    </KBar>
+    <CurrentUserProvider initialUser={user}>
+      <KBar>
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <AppSidebar />
+          <SidebarInset>
+            <Header />
+            <InfobarProvider defaultOpen={false}>
+              {children}
+              <InfoSidebar side='right' />
+            </InfobarProvider>
+          </SidebarInset>
+        </SidebarProvider>
+      </KBar>
+    </CurrentUserProvider>
   );
 }

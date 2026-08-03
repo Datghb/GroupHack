@@ -15,8 +15,14 @@ interface CurrentUserContextValue {
 
 const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
 
-export function CurrentUserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<CurrentUser | null>(null);
+export function CurrentUserProvider({
+  children,
+  initialUser = null
+}: {
+  children: React.ReactNode;
+  initialUser?: CurrentUser | null;
+}) {
+  const [user, setUser] = useState<CurrentUser | null>(initialUser);
   useEffect(() => {
     const supabase = createClient();
     async function load(authUser?: User | null) {
@@ -36,10 +42,10 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         role: profile?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT'
       });
     }
-    void load();
+    if (!initialUser) void load();
     const { data } = supabase.auth.onAuthStateChange((_event, session) => void load(session?.user));
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [initialUser]);
   const value = useMemo(() => ({ user }), [user]);
   return createElement(CurrentUserContext.Provider, { value }, children);
 }
