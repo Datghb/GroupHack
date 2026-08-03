@@ -20,28 +20,28 @@ const useThemeSwitching = () => {
   const themeActions = [
     {
       id: 'cycleTheme',
-      name: 'Switch Theme',
+      name: 'Đổi giao diện',
       shortcut: ['t', 't'],
-      section: 'Theme',
+      section: 'Giao diện',
       perform: cycleTheme
     },
     {
       id: 'toggleDarkLight',
-      name: 'Toggle Dark/Light Mode',
+      name: 'Chuyển chế độ sáng/tối',
       shortcut: ['d', 'd'],
-      section: 'Theme',
+      section: 'Giao diện',
       perform: toggleDarkLight
     },
     {
       id: 'setLightTheme',
-      name: 'Set Light Theme',
-      section: 'Theme',
+      name: 'Dùng chế độ sáng',
+      section: 'Giao diện',
       perform: () => setTheme('light')
     },
     {
       id: 'setDarkTheme',
-      name: 'Set Dark Theme',
-      section: 'Theme',
+      name: 'Dùng chế độ tối',
+      section: 'Giao diện',
       perform: () => setTheme('dark')
     }
   ];

@@ -7,6 +7,7 @@ import {
   IconBold,
   IconBox,
   IconBrandGithub,
+  IconBrandGoogle,
   IconBrandTwitter,
   IconBrightness,
   IconCalendar,
@@ -93,6 +94,7 @@ import {
 export type Icon = React.ComponentType<IconProps>;
 
 export const Icons = {
+  google: IconBrandGoogle,
   // General
   alertCircle: IconAlertCircle,
   warning: IconAlertTriangle,

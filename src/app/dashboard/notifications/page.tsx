@@ -1,7 +1,7 @@
 import NotificationsPage from '@/features/notifications/components/notifications-page';
 
 export const metadata = {
-  title: 'Dashboard: Notifications'
+  title: 'Thông báo'
 };
 
 export default function Page() {

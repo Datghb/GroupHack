@@ -35,162 +35,79 @@ import { NavGroup } from '@/types';
  */
 export const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: 'Giảng viên',
     items: [
       {
-        title: 'Dashboard',
-        url: '/dashboard/overview',
+        title: 'Tổng quan',
+        url: '/teacher/dashboard',
         icon: 'dashboard',
-        isActive: false,
-        shortcut: ['d', 'd'],
-        items: []
-      },
-      {
-        title: 'Workspaces',
-        url: '/dashboard/workspaces',
-        icon: 'workspace',
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Teams',
-        url: '/dashboard/workspaces/team',
-        icon: 'teams',
-        isActive: false,
         items: [],
-        access: { requireOrg: true }
+        access: { role: 'TEACHER' }
       },
       {
-        title: 'Product',
-        url: '/dashboard/product',
-        icon: 'product',
-        shortcut: ['p', 'p'],
-        isActive: false,
-        items: []
+        title: 'Lớp học',
+        url: '/teacher/classes',
+        icon: 'workspace',
+        items: [],
+        access: { role: 'TEACHER' }
       },
       {
-        title: 'Users',
-        url: '/dashboard/users',
+        title: 'Theo dõi tiến độ',
+        url: '/teacher/classes/web-2026/assignments/assignment-1/monitor',
+        icon: 'trendingUp',
+        items: [],
+        access: { role: 'TEACHER' }
+      },
+      {
+        title: 'Hoạt động',
+        url: '/teacher/dashboard#activity',
+        icon: 'clock',
+        items: [],
+        access: { role: 'TEACHER' }
+      }
+    ]
+  },
+  {
+    label: 'Sinh viên',
+    items: [
+      {
+        title: 'Tổng quan',
+        url: '/student/dashboard',
+        icon: 'dashboard',
+        items: [],
+        access: { role: 'STUDENT' }
+      },
+      {
+        title: 'Khám phá lớp học',
+        url: '/student/classes',
+        icon: 'search',
+        items: [],
+        access: { role: 'STUDENT' }
+      },
+      {
+        title: 'Nhóm của tôi',
+        url: '/student/classes/web-2026/teams/alpha',
         icon: 'teams',
-        shortcut: ['u', 'u'],
-        isActive: false,
-        items: []
+        items: [],
+        access: { role: 'STUDENT' }
       },
       {
-        title: 'Kanban',
-        url: '/dashboard/kanban',
-        icon: 'kanban',
-        shortcut: ['k', 'k'],
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Chat',
-        url: '/dashboard/chat',
-        icon: 'chat',
-        shortcut: ['c', 'c'],
-        isActive: false,
-        items: []
+        title: 'Checkpoint',
+        url: '/student/classes/web-2026/assignments/assignment-1',
+        icon: 'checks',
+        items: [],
+        access: { role: 'STUDENT' }
       }
     ]
   },
   {
-    label: 'Elements',
+    label: 'Tài khoản',
     items: [
       {
-        title: 'Forms',
-        url: '#',
-        icon: 'forms',
-        isActive: true,
-        items: [
-          {
-            title: 'Basic Form',
-            url: '/dashboard/forms/basic',
-            icon: 'forms',
-            shortcut: ['f', 'f']
-          },
-          {
-            title: 'Multi-Step Form',
-            url: '/dashboard/forms/multi-step',
-            icon: 'forms'
-          },
-          {
-            title: 'Sheet & Dialog',
-            url: '/dashboard/forms/sheet-form',
-            icon: 'forms'
-          },
-          {
-            title: 'Advanced Patterns',
-            url: '/dashboard/forms/advanced',
-            icon: 'forms'
-          }
-        ]
-      },
-      {
-        title: 'React Query',
-        url: '/dashboard/react-query',
-        icon: 'code',
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Icons',
-        url: '/dashboard/elements/icons',
-        icon: 'palette',
-        isActive: false,
-        items: []
-      }
-    ]
-  },
-  {
-    label: '',
-    items: [
-      {
-        title: 'Pro',
-        url: '#',
-        icon: 'pro',
-        isActive: true,
-        items: [
-          {
-            title: 'Exclusive',
-            url: '/dashboard/exclusive',
-            icon: 'exclusive',
-            shortcut: ['e', 'e']
-          }
-        ]
-      },
-      {
-        title: 'Account',
-        url: '#',
+        title: 'Hồ sơ',
+        url: '/dashboard/profile',
         icon: 'account',
-        isActive: true,
-        items: [
-          {
-            title: 'Profile',
-            url: '/dashboard/profile',
-            icon: 'profile',
-            shortcut: ['m', 'm']
-          },
-          {
-            title: 'Notifications',
-            url: '/dashboard/notifications',
-            icon: 'notification',
-            shortcut: ['n', 'n']
-          },
-          {
-            title: 'Billing',
-            url: '/dashboard/billing',
-            icon: 'billing',
-            shortcut: ['b', 'b'],
-            access: { requireOrg: true }
-          },
-          {
-            title: 'Login',
-            shortcut: ['l', 'l'],
-            url: '/',
-            icon: 'login'
-          }
-        ]
+        items: []
       }
     ]
   }

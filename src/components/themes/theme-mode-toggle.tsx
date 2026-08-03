@@ -47,10 +47,10 @@ export function ThemeModeToggle() {
         }
       >
         <Icons.brightness />
-        <span className='sr-only'>Toggle theme</span>
+        <span className='sr-only'>Đổi chế độ giao diện</span>
       </TooltipTrigger>
       <TooltipContent>
-        Toggle theme <Kbd>D D</Kbd>
+        Đổi chế độ giao diện <Kbd>D D</Kbd>
       </TooltipContent>
     </Tooltip>
   );

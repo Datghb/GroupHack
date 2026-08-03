@@ -10,7 +10,7 @@ export default function CtaGithub() {
       nativeButton={false}
       render={
         <a
-          aria-label='View on GitHub'
+          aria-label='Xem mã nguồn trên GitHub'
           href='https://github.com/Kiranism/next-shadcn-dashboard-starter'
           rel='noopener noreferrer'
           target='_blank'

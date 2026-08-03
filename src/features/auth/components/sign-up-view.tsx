@@ -1,13 +1,13 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { InteractiveGridPattern } from './interactive-grid';
+import { SupabaseAuthForm } from './supabase-auth-form';
 
 export const metadata: Metadata = {
-  title: 'Authentication',
-  description: 'Authentication forms built using the components.'
+  title: 'Đăng ký',
+  description: 'Tạo tài khoản trên nền tảng theo dõi tiến độ lớp học.'
 };
 
 export default function SignUpViewPage() {
@@ -20,7 +20,7 @@ export default function SignUpViewPage() {
           'absolute top-4 right-4 hidden md:top-8 md:right-8'
         )}
       >
-        Sign Up
+        Đăng ký
       </Link>
       <div className='relative hidden h-full flex-col p-10 lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-sidebar' />
@@ -37,7 +37,7 @@ export default function SignUpViewPage() {
           >
             <path d='M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3' />
           </svg>
-          Logo
+          Tiến độ lớp học
         </div>
         <InteractiveGridPattern
           className={cn(
@@ -48,20 +48,16 @@ export default function SignUpViewPage() {
         <div className='text-sidebar-foreground relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
             <p className='text-lg'>
-              &ldquo;This starter template has saved me countless hours of work and helped me
-              deliver projects to my clients faster than ever before.&rdquo;
+              &ldquo;Cùng nhau biến tiến độ thành những bước đi rõ ràng, minh bạch và có ý
+              nghĩa.&rdquo;
             </p>
-            <footer className='text-sidebar-foreground/70 text-sm'>Random Dude</footer>
+            <footer className='text-sidebar-foreground/70 text-sm'>Không gian lớp học số</footer>
           </blockquote>
         </div>
       </div>
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
-          <ClerkSignUpForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
+          <SupabaseAuthForm mode='sign-up' />
         </div>
       </div>
     </div>

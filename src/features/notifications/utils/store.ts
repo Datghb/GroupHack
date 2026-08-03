@@ -23,14 +23,14 @@ type NotificationState = {
 const mockNotifications: Notification[] = [
   {
     id: '1',
-    title: 'New team member joined',
-    body: 'Sarah Connor has joined the Engineering workspace.',
+    title: 'Thành viên mới tham gia nhóm',
+    body: 'Nguyễn An vừa tham gia Nhóm Alpha.',
     status: 'unread',
     createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
     actions: [
       {
         id: 'view',
-        label: 'View workspace',
+        label: 'Xem không gian nhóm',
         type: 'redirect',
         style: 'primary'
       }
@@ -38,14 +38,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '2',
-    title: 'New product added',
-    body: 'A new product "Dashboard Pro" has been added to the catalog.',
+    title: 'Checkpoint mới đã được mở',
+    body: 'Checkpoint "Prototype tương tác" hiện đã sẵn sàng để cập nhật tiến độ.',
     status: 'unread',
     createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     actions: [
       {
         id: 'view-product',
-        label: 'View products',
+        label: 'Xem checkpoint',
         type: 'redirect',
         style: 'primary'
       }
@@ -53,14 +53,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '3',
-    title: 'Billing cycle updated',
-    body: 'Your Pro plan has been renewed. Next invoice on April 24, 2026.',
+    title: 'Hạn nộp sắp tới',
+    body: 'Checkpoint nhóm sẽ đến hạn trong 4 ngày nữa.',
     status: 'unread',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     actions: [
       {
         id: 'billing',
-        label: 'View billing',
+        label: 'Xem thời hạn',
         type: 'redirect',
         style: 'primary'
       }
@@ -68,14 +68,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '4',
-    title: 'Task assigned to you',
-    body: 'You have been assigned "Update dashboard analytics" on the Kanban board.',
+    title: 'Bạn được giao nhiệm vụ mới',
+    body: 'Trưởng nhóm đã giao cho bạn hoàn thiện luồng đăng ký của prototype.',
     status: 'read',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     actions: [
       {
         id: 'open',
-        label: 'Open kanban',
+        label: 'Mở nhiệm vụ',
         type: 'redirect',
         style: 'primary'
       }
@@ -83,14 +83,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '5',
-    title: 'New message from Alex',
-    body: 'Alex sent you a message: "Hey, can we sync on the overview dashboard?"',
+    title: 'Giảng viên đã xác nhận checkpoint',
+    body: 'Checkpoint "Đề xuất ý tưởng nhóm" đã được xác nhận hoàn thành.',
     status: 'read',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
     actions: [
       {
         id: 'open-chat',
-        label: 'Open chat',
+        label: 'Xem chi tiết',
         type: 'redirect',
         style: 'primary'
       }
