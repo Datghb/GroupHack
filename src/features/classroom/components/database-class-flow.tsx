@@ -28,6 +28,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { classroomKeys, classroomsQueryOptions, classroomTeamsQueryOptions } from '../api/queries';
 import { createClassroom, createTeam, joinClassroom, joinExistingTeam } from '../api/service';
+import { deleteClassroomMutation } from '../api/mutations';
+import type { ClassroomRecord } from '../api/types';
 
 const classSchema = z.object({
   name: z.string().trim().min(3, 'Tên lớp cần ít nhất 3 ký tự')
@@ -42,12 +44,14 @@ type TeamValues = z.infer<typeof teamSchema>;
 
 export function TeacherDatabaseClasses() {
   const [open, setOpen] = useState(false);
+  const [classroomToDelete, setClassroomToDelete] = useState<ClassroomRecord | null>(null);
   const queryClient = useQueryClient();
   const { data = [], isPending, error } = useQuery({ ...classroomsQueryOptions(), retry: false });
   const mutation = useMutation({
     mutationFn: createClassroom,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: classroomKeys.all })
   });
+  const deleteMutation = useMutation(deleteClassroomMutation);
   const { FormTextField } = useFormFields<ClassValues>();
   const form = useAppForm({
     defaultValues: { name: '' } as ClassValues,
@@ -85,18 +89,28 @@ export function TeacherDatabaseClasses() {
                 Đang mở
               </Badge>
             </CardHeader>
-            <CardContent className='flex items-center justify-between border-t pt-3'>
+            <CardContent className='flex items-center justify-between gap-3 border-t pt-3'>
               <span className='text-xs text-muted-foreground'>Quản lý bài tập & checkpoint</span>
-              <Button
-                variant='outline'
-                size='sm'
-                render={
-                  <Link aria-label={`Mở lớp ${item.name}`} href={`/teacher/classes/${item.id}`} />
-                }
-              >
-                Mở lớp
-                <Icons.arrowRight aria-hidden='true' />
-              </Button>
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='ghost'
+                  size='icon-sm'
+                  aria-label={`Xóa lớp ${item.name}`}
+                  onClick={() => setClassroomToDelete(item)}
+                >
+                  <Icons.trash className='text-destructive' aria-hidden='true' />
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  render={
+                    <Link aria-label={`Mở lớp ${item.name}`} href={`/teacher/classes/${item.id}`} />
+                  }
+                >
+                  Mở lớp
+                  <Icons.arrowRight aria-hidden='true' />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -118,6 +132,47 @@ export function TeacherDatabaseClasses() {
             </Button>
             <Button type='submit' form='db-class-form' disabled={mutation.isPending}>
               {mutation.isPending ? 'Đang tạo...' : 'Tạo lớp'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={classroomToDelete !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !deleteMutation.isPending) setClassroomToDelete(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa lớp {classroomToDelete?.name}?</DialogTitle>
+            <DialogDescription>
+              Toàn bộ học sinh, khóa học, bài tập, nhóm và tiến độ trong lớp sẽ bị xóa vĩnh viễn.
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              disabled={deleteMutation.isPending}
+              onClick={() => setClassroomToDelete(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant='destructive'
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (!classroomToDelete) return;
+                deleteMutation.mutate(classroomToDelete.id, {
+                  onSuccess: () => {
+                    toast.success('Đã xóa lớp học.');
+                    setClassroomToDelete(null);
+                  },
+                  onError: (deleteError) => toast.error(deleteError.message)
+                });
+              }}
+            >
+              {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
             </Button>
           </DialogFooter>
         </DialogContent>

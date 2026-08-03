@@ -17,6 +17,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 export const getClassrooms = () => request<ClassroomRecord[]>('/api/classrooms');
 export const createClassroom = (payload: CreateClassroomPayload) =>
   request<ClassroomRecord>('/api/classrooms', { method: 'POST', body: JSON.stringify(payload) });
+export const deleteClassroom = (classroomId: string) =>
+  request<{ deleted: true }>(`/api/classrooms/${classroomId}`, { method: 'DELETE' });
 export const joinClassroom = (classroomId: string) =>
   request<{ joined: true }>(`/api/classrooms/${classroomId}/enroll`, { method: 'POST' });
 export const getTeams = (classroomId: string) =>
