@@ -35,18 +35,17 @@ export async function GET() {
     db.from('assignment_teams').select('id').in('classroom_id', classIds)
   ]);
   const assignmentIds = (assignments ?? []).map((item) => item.id);
-  const { data: checkpoints } = assignmentIds.length
-    ? await db
-        .from('assignment_checkpoints')
-        .select('assignment_id')
-        .in('assignment_id', assignmentIds)
-    : { data: [] };
-  const { data: completions } = assignmentIds.length
-    ? await db
-        .from('checkpoint_completions')
-        .select('assignment_id,team_id')
-        .in('assignment_id', assignmentIds)
-    : { data: [] };
+  const [{ data: checkpoints }, { data: completions }] = await Promise.all([
+    assignmentIds.length
+      ? db.from('assignment_checkpoints').select('assignment_id').in('assignment_id', assignmentIds)
+      : Promise.resolve({ data: [] }),
+    assignmentIds.length
+      ? db
+          .from('checkpoint_completions')
+          .select('assignment_id,team_id')
+          .in('assignment_id', assignmentIds)
+      : Promise.resolve({ data: [] })
+  ]);
   return NextResponse.json({
     data: {
       classCount: classIds.length,

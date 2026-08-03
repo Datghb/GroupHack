@@ -6,25 +6,27 @@ import { Button } from '@/components/ui/button';
 import { NotificationCard } from '@/components/ui/notification-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter } from 'next/navigation';
-import { useNotificationStore } from '../utils/store';
-
-const actionRoutes: Record<string, string> = {
-  view: '/dashboard/workspaces',
-  'view-product': '/dashboard/product',
-  billing: '/dashboard/billing',
-  open: '/dashboard/kanban',
-  'open-chat': '/dashboard/chat'
-};
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  markAllNotificationsAsReadMutation,
+  markNotificationAsReadMutation
+} from '../api/mutations';
+import { notificationsQueryOptions } from '../api/queries';
+import type { NotificationRecord } from '../api/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function NotificationsPage() {
-  const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotificationStore();
+  const { data, error, isPending } = useQuery(notificationsQueryOptions());
+  const markAsRead = useMutation(markNotificationAsReadMutation);
+  const markAllAsRead = useMutation(markAllNotificationsAsReadMutation);
   const router = useRouter();
-  const count = unreadCount();
+  const notifications = data?.items ?? [];
+  const count = data?.unreadCount ?? 0;
 
   const unreadNotifications = notifications.filter((n) => n.status === 'unread');
   const readNotifications = notifications.filter((n) => n.status === 'read');
 
-  const renderList = (items: typeof notifications) => {
+  const renderList = (items: NotificationRecord[]) => {
     if (items.length === 0) {
       return (
         <div className='flex flex-col items-center justify-center py-16'>
@@ -44,13 +46,16 @@ export default function NotificationsPage() {
             body={notification.body}
             status={notification.status}
             createdAt={notification.createdAt}
-            actions={notification.actions}
-            onMarkAsRead={markAsRead}
-            onAction={(notifId, actionId) => {
-              const route = actionRoutes[actionId];
-              if (route) {
-                markAsRead(notifId);
-                router.push(route);
+            actions={
+              notification.actionUrl
+                ? [{ id: 'open', label: 'Xem chi tiết', type: 'redirect' }]
+                : []
+            }
+            onMarkAsRead={(id) => markAsRead.mutate(id)}
+            onAction={(notificationId) => {
+              if (notification.actionUrl) {
+                markAsRead.mutate(notificationId);
+                router.push(notification.actionUrl);
               }
             }}
           />
@@ -65,28 +70,45 @@ export default function NotificationsPage() {
       pageDescription='Xem và quản lý tất cả thông báo của bạn.'
       pageHeaderAction={
         count > 0 ? (
-          <Button variant='outline' size='sm' onClick={markAllAsRead}>
+          <Button
+            variant='outline'
+            size='sm'
+            disabled={markAllAsRead.isPending}
+            onClick={() => markAllAsRead.mutate()}
+          >
             Đánh dấu tất cả đã đọc
           </Button>
         ) : undefined
       }
     >
-      <Tabs defaultValue='all'>
-        <TabsList>
-          <TabsTrigger value='all'>Tất cả ({notifications.length})</TabsTrigger>
-          <TabsTrigger value='unread'>Chưa đọc ({unreadNotifications.length})</TabsTrigger>
-          <TabsTrigger value='read'>Đã đọc ({readNotifications.length})</TabsTrigger>
-        </TabsList>
-        <TabsContent value='all' className='mt-4'>
-          {renderList(notifications)}
-        </TabsContent>
-        <TabsContent value='unread' className='mt-4'>
-          {renderList(unreadNotifications)}
-        </TabsContent>
-        <TabsContent value='read' className='mt-4'>
-          {renderList(readNotifications)}
-        </TabsContent>
-      </Tabs>
+      {isPending ? (
+        <div className='flex flex-col gap-3'>
+          <Skeleton className='h-10 w-72' />
+          <Skeleton className='h-28 w-full' />
+          <Skeleton className='h-28 w-full' />
+        </div>
+      ) : error ? (
+        <p className='py-16 text-center text-sm text-destructive'>
+          Không thể tải thông báo. Vui lòng thử lại.
+        </p>
+      ) : (
+        <Tabs defaultValue='all'>
+          <TabsList>
+            <TabsTrigger value='all'>Tất cả ({notifications.length})</TabsTrigger>
+            <TabsTrigger value='unread'>Chưa đọc ({unreadNotifications.length})</TabsTrigger>
+            <TabsTrigger value='read'>Đã đọc ({readNotifications.length})</TabsTrigger>
+          </TabsList>
+          <TabsContent value='all' className='mt-4'>
+            {renderList(notifications)}
+          </TabsContent>
+          <TabsContent value='unread' className='mt-4'>
+            {renderList(unreadNotifications)}
+          </TabsContent>
+          <TabsContent value='read' className='mt-4'>
+            {renderList(readNotifications)}
+          </TabsContent>
+        </Tabs>
+      )}
     </PageContainer>
   );
 }

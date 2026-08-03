@@ -26,26 +26,19 @@ import {
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import * as React from 'react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { isOpen } = useMediaQuery();
   const { user } = useCurrentUser();
   const router = useRouter();
   const filteredGroups = useFilteredNavGroups(navGroups);
-
-  React.useEffect(() => {
-    // Side effects based on sidebar state changes
-  }, [isOpen]);
 
   return (
     <Sidebar collapsible='icon'>
@@ -147,7 +140,15 @@ export default function AppSidebar() {
                     <Icons.account className='mr-2 h-4 w-4' />
                     Hồ sơ
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      router.push(
+                        user?.role === 'TEACHER'
+                          ? '/teacher/notifications'
+                          : '/student/notifications'
+                      )
+                    }
+                  >
                     <Icons.notification className='mr-2 h-4 w-4' />
                     Thông báo
                   </DropdownMenuItem>

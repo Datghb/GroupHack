@@ -1,15 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 export async function getApiAuth() {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return { userId: null, role: null } as const;
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims.sub;
+  if (!userId) return { userId: null, role: null } as const;
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', data.user.id)
+    .eq('id', userId)
     .single();
   return {
-    userId: data.user.id,
+    userId,
     role: profile?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT'
   } as const;
 }

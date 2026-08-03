@@ -18,9 +18,9 @@ export async function proxy(request: NextRequest) {
       }
     }
   );
-  const { data } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
   const protectedPath = /^\/(dashboard|teacher|student)(\/|$)/.test(request.nextUrl.pathname);
-  if (protectedPath && !data.user) {
+  if (protectedPath && !data?.claims.sub) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/sign-in';
     return NextResponse.redirect(url);
