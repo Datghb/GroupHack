@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getApiAuth } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { canAccessClassroom } from '@/lib/classroom-access';
+import { getCheckpointTitle } from '@/features/classroom/domain/checkpoint-label';
 
 const schema = z.object({
   title: z.string().trim().min(3).max(160),
@@ -12,8 +13,6 @@ const schema = z.object({
   checkpoints: z
     .array(
       z.object({
-        title: z.string().trim().min(2).max(160),
-        description: z.string().trim().max(500).default(''),
         dueAt: z.string().optional().default(''),
         scope: z.enum(['INDIVIDUAL', 'TEAM'])
       })
@@ -148,8 +147,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     .insert(
       value.checkpoints.map((checkpoint, position) => ({
         assignment_id: assignment.id,
-        title: checkpoint.title,
-        description: checkpoint.description,
+        title: getCheckpointTitle(position),
+        description: '',
         due_at: checkpoint.dueAt || null,
         position,
         scope: checkpoint.scope

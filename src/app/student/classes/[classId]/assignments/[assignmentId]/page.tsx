@@ -9,7 +9,7 @@ export default async function StudentAssignmentPage({
   return (
     <PageContainer
       pageTitle='Chi tiết bài tập'
-      pageDescription='Theo dõi checkpoint và làm việc cùng nhóm của bài tập.'
+      pageDescription='Tick checkpoint đã hoàn thành và theo dõi tiến độ cùng nhóm.'
     >
       <StudentAssignmentWorkspace classId={classId} assignmentId={assignmentId} />
     </PageContainer>

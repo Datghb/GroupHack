@@ -54,8 +54,6 @@ export interface CreateAssignmentPayload {
   description: string;
   dueAt: string;
   checkpoints: Array<{
-    title: string;
-    description: string;
     dueAt: string;
     scope: CheckpointScope;
   }>;
@@ -67,8 +65,6 @@ export interface UpdateAssignmentPayload {
   dueAt: string;
   checkpoints: Array<{
     id?: string;
-    title: string;
-    description: string;
     dueAt: string;
     scope: CheckpointScope;
   }>;

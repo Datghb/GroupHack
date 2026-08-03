@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -76,15 +77,11 @@ type AssignmentValues = z.infer<typeof assignmentSchema>;
 type TeamValues = z.infer<typeof teamSchema>;
 interface CheckpointDraft {
   id?: string;
-  title: string;
-  description: string;
   dueAt: string;
   scope: CheckpointScope;
 }
 
 const EMPTY_CHECKPOINT: CheckpointDraft = {
-  title: '',
-  description: '',
   dueAt: '',
   scope: 'TEAM'
 };
@@ -211,14 +208,10 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
   });
   const mutation = useMutation({
     mutationFn: (value: AssignmentValues) => {
-      const validCheckpoints = checkpoints
-        .map((item) => ({
-          ...item,
-          title: item.title.trim(),
-          dueAt: toIsoDateTime(item.dueAt)
-        }))
-        .filter((item) => item.title.length >= 2);
-      if (!validCheckpoints.length) throw new Error('Cần thiết kế ít nhất một checkpoint.');
+      const validCheckpoints = checkpoints.map((item) => ({
+        ...item,
+        dueAt: toIsoDateTime(item.dueAt)
+      }));
       if (editingAssignment)
         return updateAssignment(classId, editingAssignment.id, {
           ...value,
@@ -282,8 +275,6 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
     setCheckpoints(
       assignment.checkpoints.map((checkpoint) => ({
         id: checkpoint.id,
-        title: checkpoint.title,
-        description: checkpoint.description,
         dueAt: toLocalDateTime(checkpoint.dueAt),
         scope: checkpoint.scope
       }))
@@ -405,8 +396,8 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
             <DialogTitle>{editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập'}</DialogTitle>
             <DialogDescription>
               {editingAssignment
-                ? 'Cập nhật nội dung và các checkpoint của bài tập.'
-                : 'Thiết kế ít nhất một checkpoint trước khi tạo bài tập.'}
+                ? 'Cập nhật số lượng, phạm vi và hạn của các checkpoint.'
+                : 'Thêm checkpoint; hệ thống sẽ tự đặt tên theo thứ tự.'}
             </DialogDescription>
           </DialogHeader>
           <form.AppForm>
@@ -466,18 +457,6 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
                     </Button>
                   )}
                 </div>
-                <Input
-                  aria-label={`Tên checkpoint ${index + 1}`}
-                  placeholder='Tên checkpoint'
-                  value={checkpoint.title}
-                  onChange={(event) =>
-                    setCheckpoints((items) =>
-                      items.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, title: event.target.value } : item
-                      )
-                    )
-                  }
-                />
                 <div className='flex flex-col gap-2'>
                   <Label>Phạm vi checkpoint</Label>
                   <Select
@@ -507,18 +486,6 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
                     </SelectContent>
                   </Select>
                 </div>
-                <Input
-                  aria-label={`Mô tả checkpoint ${index + 1}`}
-                  placeholder='Mô tả (không bắt buộc)'
-                  value={checkpoint.description}
-                  onChange={(event) =>
-                    setCheckpoints((items) =>
-                      items.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, description: event.target.value } : item
-                      )
-                    )
-                  }
-                />
                 <div>
                   <Label>Hạn checkpoint</Label>
                   <Input
@@ -760,7 +727,10 @@ export function StudentAssignmentWorkspace({
       <Card>
         <CardHeader>
           <CardTitle>{assignment.title}</CardTitle>
-          <CardDescription>{assignment.description || 'Bài tập chưa có mô tả.'}</CardDescription>
+          <CardDescription>
+            {assignment.description || 'Bài tập chưa có mô tả.'} Chỉ cần tick checkpoint khi bạn
+            hoàn thành, không cần nhập thêm nội dung.
+          </CardDescription>
         </CardHeader>
         <CardContent className='space-y-2'>
           {assignment.checkpoints.map((checkpoint, index) => (
@@ -788,20 +758,25 @@ export function StudentAssignmentWorkspace({
                 (() => {
                   const completed =
                     ownProgress?.myCompletedCheckpointIds.includes(checkpoint.id) ?? false;
+                  const checkboxId = `checkpoint-${checkpoint.id}`;
                   return (
-                    <Button
-                      size='sm'
-                      variant={completed ? 'secondary' : 'outline'}
-                      disabled={progressMutation.isPending}
-                      onClick={() =>
-                        progressMutation.mutate({
-                          checkpointId: checkpoint.id,
-                          completed: !completed
-                        })
-                      }
-                    >
-                      <Icons.check /> {completed ? 'Đã xong' : 'Đánh dấu xong'}
-                    </Button>
+                    <div className='flex shrink-0 items-center gap-2'>
+                      <Checkbox
+                        id={checkboxId}
+                        checked={completed}
+                        disabled={progressMutation.isPending}
+                        aria-label={`Đánh dấu checkpoint ${checkpoint.title} là hoàn thành`}
+                        onCheckedChange={(checked) =>
+                          progressMutation.mutate({
+                            checkpointId: checkpoint.id,
+                            completed: checked
+                          })
+                        }
+                      />
+                      <Label htmlFor={checkboxId} className='cursor-pointer whitespace-nowrap'>
+                        {completed ? 'Đã hoàn thành' : 'Hoàn thành'}
+                      </Label>
+                    </div>
                   );
                 })()}
             </div>
