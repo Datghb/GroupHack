@@ -69,7 +69,7 @@ export function Messenger() {
 
       const cursor = replyCursor[conversationId] ?? 0;
       const nextReply = autoReplies[cursor % autoReplies.length];
-      const delay = shouldReduceMotion ? 0 : 900;
+      const delay = shouldReduceMotion ? 0 : 150;
 
       replyTimeoutRef.current = window.setTimeout(() => {
         const timestamp = new Date().toLocaleTimeString('en-US', {

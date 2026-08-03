@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { UserRole } from '@/features/classroom/domain/types';
+import type { CurrentUser } from '@/hooks/use-current-user';
 import { createClient } from '@/lib/supabase/server';
 
 const getAuthContext = cache(async () => {
@@ -11,15 +12,30 @@ const getAuthContext = cache(async () => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('full_name, role')
     .eq('id', userId)
     .single();
 
   return {
     userId,
+    email: typeof data.claims.email === 'string' ? data.claims.email : '',
+    fullName:
+      profile?.full_name ||
+      (typeof data.claims.email === 'string' ? data.claims.email : 'Người dùng'),
     role: profile?.role === 'TEACHER' ? ('TEACHER' as const) : ('STUDENT' as const)
   };
 });
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const context = await getAuthContext();
+  if (!context) return null;
+  return {
+    id: context.userId,
+    email: context.email,
+    fullName: context.fullName,
+    role: context.role
+  };
+}
 
 export async function requireAuthenticatedUser(): Promise<string> {
   const context = await getAuthContext();
