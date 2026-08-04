@@ -37,6 +37,7 @@ const mapTeam = (
   members: MemberRow[],
   users: Map<string, UserSummary>,
   requests: RequestRow[] = [],
+  submittedTeamIds: Set<string> = new Set(),
   currentUserId?: string
 ) => ({
   id: team.id,
@@ -45,6 +46,7 @@ const mapTeam = (
   leaderId: team.leader_id,
   capacity: team.capacity,
   open: team.open,
+  hasSubmission: submittedTeamIds.has(team.id),
   memberIds: members.filter((item) => item.team_id === team.id).map((item) => item.student_id),
   members: members
     .filter((item) => item.team_id === team.id)
@@ -94,15 +96,16 @@ export async function GET(
     .order('created_at');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const ids = (teams ?? []).map((item) => item.id);
-  const [{ data: members }, { data: requests }] = ids.length
+  const [{ data: members }, { data: requests }, { data: submissions }] = ids.length
     ? await Promise.all([
         db.from('assignment_team_members').select('*').in('team_id', ids),
         db
           .from('assignment_team_join_requests')
           .select('id,team_id,student_id,status,created_at')
-          .in('team_id', ids)
+          .in('team_id', ids),
+        db.from('product_submissions').select('team_id').eq('assignment_id', assignmentId)
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }];
   const memberIds = [
     ...new Set([
       ...(members ?? []).map((item) => item.student_id),
@@ -129,7 +132,16 @@ export async function GET(
       ])
   );
   return NextResponse.json({
-    data: (teams ?? []).map((team) => mapTeam(team, members ?? [], users, requests ?? [], userId))
+    data: (teams ?? []).map((team) =>
+      mapTeam(
+        team,
+        members ?? [],
+        users,
+        requests ?? [],
+        new Set((submissions ?? []).map((submission) => submission.team_id)),
+        userId
+      )
+    )
   });
 }
 export async function POST(
