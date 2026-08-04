@@ -4,7 +4,8 @@ import type {
   DiscussionComment,
   ReviewProductPayload,
   ShowcaseResponse,
-  SubmitProductPayload
+  SubmitProductPayload,
+  UpdateReviewModePayload
 } from './types';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -29,6 +30,11 @@ export const createCriterion = (payload: CreateCriterionPayload) =>
   request('/api/showcase/criteria', { method: 'POST', body: JSON.stringify(payload) });
 export const deleteCriterion = (criterionId: string) =>
   request(`/api/showcase/criteria/${criterionId}`, { method: 'DELETE' });
+export const updateReviewMode = (payload: UpdateReviewModePayload) =>
+  request('/api/showcase/review-mode', {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
 export const getDiscussionComments = (submissionId: string) =>
   request<DiscussionComment[]>(`/api/showcase/${submissionId}/comments`);
 export const createDiscussionComment = (

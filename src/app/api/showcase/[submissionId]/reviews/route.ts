@@ -22,10 +22,13 @@ export async function POST(
   const db = getSupabaseAdmin();
   const { data: submission } = await db
     .from('product_submissions')
-    .select('id,assignment_id,team_id')
+    .select('id,assignment_id,team_id,assignments!inner(review_mode)')
     .eq('id', submissionId)
     .maybeSingle();
   if (!submission) return NextResponse.json({ error: 'Không tìm thấy sản phẩm.' }, { status: 404 });
+  const assignmentReviewMode = (submission.assignments as unknown as { review_mode: string })
+    .review_mode;
+  const reviewMode = assignmentReviewMode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM';
   let reviewerTeamId: string | null = null;
   if (role === 'TEACHER') {
     const { data: managedAssignment } = await db
@@ -75,7 +78,9 @@ export async function POST(
     .select('id')
     .eq('submission_id', submissionId);
   existingReviewQuery = reviewerTeamId
-    ? existingReviewQuery.eq('reviewer_team_id', reviewerTeamId)
+    ? reviewMode === 'INDIVIDUAL'
+      ? existingReviewQuery.eq('reviewer_id', userId).not('reviewer_team_id', 'is', null)
+      : existingReviewQuery.eq('reviewer_team_id', reviewerTeamId).eq('review_mode', 'TEAM')
     : existingReviewQuery.eq('reviewer_id', userId).is('reviewer_team_id', null);
   const { data: existingReview, error: lookupError } = await existingReviewQuery.maybeSingle();
   if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
@@ -83,6 +88,7 @@ export async function POST(
     submission_id: submissionId,
     reviewer_team_id: reviewerTeamId,
     reviewer_id: userId,
+    review_mode: reviewMode,
     rating,
     comment: '',
     updated_at: new Date().toISOString()
@@ -92,6 +98,7 @@ export async function POST(
         .from('product_reviews')
         .update({
           reviewer_id: reviewValues.reviewer_id,
+          review_mode: reviewValues.review_mode,
           rating: reviewValues.rating,
           comment: reviewValues.comment,
           updated_at: reviewValues.updated_at
@@ -105,6 +112,7 @@ export async function POST(
           submission_id: submissionId,
           reviewer_team_id: reviewValues.reviewer_team_id,
           reviewer_id: reviewValues.reviewer_id,
+          review_mode: reviewValues.review_mode,
           rating: reviewValues.rating,
           comment: reviewValues.comment,
           updated_at: reviewValues.updated_at

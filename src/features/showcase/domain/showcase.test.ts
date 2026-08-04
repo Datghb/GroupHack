@@ -4,7 +4,8 @@ import {
   calculateRubricRating,
   canPublishAssignmentProduct,
   canPublishSubmission,
-  canReviewSubmission
+  canReviewSubmission,
+  isStudentReviewOwner
 } from './showcase';
 
 describe('showcase rules', () => {
@@ -60,5 +61,31 @@ describe('showcase rules', () => {
     expect(calculateRubricRating([5, 4, 3])).toBe(4);
     expect(calculateRubricRating([5, 4])).toBe(4.5);
     expect(() => calculateRubricRating([])).toThrow('ít nhất một tiêu chí');
+  });
+
+  it('resolves student reviews by team or by individual according to assignment mode', () => {
+    const review = { reviewerId: 'student-a', reviewerTeamId: 'team-a' };
+
+    expect(
+      isStudentReviewOwner(review, {
+        reviewMode: 'TEAM',
+        studentId: 'student-b',
+        teamId: 'team-a'
+      })
+    ).toBe(true);
+    expect(
+      isStudentReviewOwner(review, {
+        reviewMode: 'INDIVIDUAL',
+        studentId: 'student-b',
+        teamId: 'team-a'
+      })
+    ).toBe(false);
+    expect(
+      isStudentReviewOwner(review, {
+        reviewMode: 'INDIVIDUAL',
+        studentId: 'student-a',
+        teamId: 'team-a'
+      })
+    ).toBe(true);
   });
 });

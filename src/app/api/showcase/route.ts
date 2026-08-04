@@ -5,7 +5,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCheckpointCompletionState } from '@/features/classroom/domain/checkpoint-completion';
 import {
   calculateRatingSummary,
-  canPublishAssignmentProduct
+  canPublishAssignmentProduct,
+  isStudentReviewOwner
 } from '@/features/showcase/domain/showcase';
 
 const submissionSchema = z.object({
@@ -50,7 +51,7 @@ export async function GET() {
 
   const { data: assignments, error: assignmentError } = await db
     .from('assignments')
-    .select('id,title,classroom_id')
+    .select('id,title,classroom_id,review_mode')
     .in('classroom_id', classIds);
   if (assignmentError)
     return NextResponse.json({ error: assignmentError.message }, { status: 500 });
@@ -85,31 +86,59 @@ export async function GET() {
     ])
   );
   const submissionIds = (submissions ?? []).map((item) => item.id);
-  const [{ data: teams }, { data: reviews }, { data: discussionComments }] = await Promise.all([
+  const myTeamIds = (memberships ?? []).map((item) => item.team_id);
+  const [
+    { data: teams },
+    { data: reviews },
+    { data: reviewScoreRows },
+    { data: discussionComments },
+    { data: checkpoints },
+    { data: completions },
+    { data: members }
+  ] = await Promise.all([
     teamIds.length
       ? db.from('assignment_teams').select('id,name').in('id', teamIds)
       : Promise.resolve({ data: [] }),
     submissionIds.length
       ? db
           .from('product_reviews')
-          .select('*')
+          .select('id,submission_id,reviewer_team_id,reviewer_id,rating,created_at,review_mode')
           .in('submission_id', submissionIds)
           .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    submissionIds.length
+      ? db
+          .from('product_review_scores')
+          .select('review_id,criterion_id,score,product_reviews!inner(submission_id)')
+          .in('product_reviews.submission_id', submissionIds)
       : Promise.resolve({ data: [] }),
     submissionIds.length
       ? db
           .from('product_discussion_comments')
           .select('id,submission_id')
           .in('submission_id', submissionIds)
+      : Promise.resolve({ data: [] }),
+    role === 'STUDENT' && assignmentIds.length
+      ? db
+          .from('assignment_checkpoints')
+          .select('id,assignment_id,scope')
+          .in('assignment_id', assignmentIds)
+      : Promise.resolve({ data: [] }),
+    role === 'STUDENT' && myTeamIds.length
+      ? db
+          .from('checkpoint_completions')
+          .select('checkpoint_id,assignment_id,team_id,completed_by,completion_scope')
+          .in('team_id', myTeamIds)
+      : Promise.resolve({ data: [] }),
+    role === 'STUDENT' && myTeamIds.length
+      ? db.from('assignment_team_members').select('team_id,student_id').in('team_id', myTeamIds)
       : Promise.resolve({ data: [] })
   ]);
-  const reviewIds = (reviews ?? []).map((item) => item.id);
-  const { data: reviewScores } = reviewIds.length
-    ? await db
-        .from('product_review_scores')
-        .select('review_id,criterion_id,score')
-        .in('review_id', reviewIds)
-    : { data: [] };
+  const reviewScores = (reviewScoreRows ?? []).map((score) => ({
+    review_id: score.review_id,
+    criterion_id: score.criterion_id,
+    score: score.score
+  }));
   const mappedSubmissions = (submissions ?? []).map((submission) => {
     const assignment = (assignments ?? []).find((item) => item.id === submission.assignment_id)!;
     const myTeam = (memberships ?? []).find(
@@ -135,14 +164,29 @@ export async function GET() {
       createdAt: review.created_at,
       scores: (reviewScores ?? [])
         .filter((score) => score.review_id === review.id)
-        .map((score) => ({ criterionId: score.criterion_id, score: score.score }))
+        .map((score) => ({
+          criterionId: score.criterion_id,
+          score: score.score
+        }))
     }));
     const myReviewRow =
       role === 'TEACHER'
         ? submissionReviews.find(
             (review) => review.reviewer_id === userId && !review.reviewer_team_id
           )
-        : submissionReviews.find((review) => review.reviewer_team_id === myTeam?.team_id);
+        : submissionReviews.find((review) =>
+            isStudentReviewOwner(
+              {
+                reviewerId: review.reviewer_id,
+                reviewerTeamId: review.reviewer_team_id
+              },
+              {
+                reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM',
+                studentId: userId,
+                teamId: myTeam?.team_id ?? null
+              }
+            )
+          );
     return {
       id: submission.id,
       assignmentId: submission.assignment_id,
@@ -174,24 +218,13 @@ export async function GET() {
       }),
       commentCount: (discussionComments ?? []).filter(
         (comment) => comment.submission_id === submission.id
-      ).length
+      ).length,
+      reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
     };
   });
 
   const publishableAssignments = [];
   if (role === 'STUDENT' && memberships?.length) {
-    const myTeamIds = memberships.map((item) => item.team_id);
-    const [{ data: checkpoints }, { data: completions }, { data: members }] = await Promise.all([
-      db
-        .from('assignment_checkpoints')
-        .select('id,assignment_id,scope')
-        .in('assignment_id', assignmentIds),
-      db
-        .from('checkpoint_completions')
-        .select('checkpoint_id,assignment_id,team_id,completed_by,completion_scope')
-        .in('team_id', myTeamIds),
-      db.from('assignment_team_members').select('team_id,student_id').in('team_id', myTeamIds)
-    ]);
     for (const membership of memberships) {
       const checkpointRows = (checkpoints ?? []).filter(
         (item) => item.assignment_id === membership.assignment_id
@@ -266,7 +299,8 @@ export async function GET() {
                   title: criterion.title,
                   description: criterion.description,
                   position: criterion.position
-                }))
+                })),
+              reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
             }))
           : []
     }

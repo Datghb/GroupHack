@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -37,7 +37,8 @@ import {
   createDiscussionComment,
   deleteCriterion,
   reviewProduct,
-  submitProduct
+  submitProduct,
+  updateReviewMode
 } from '../api/service';
 import type { DiscussionComment, ProductSubmission, ShowcaseResponse } from '../api/types';
 
@@ -127,22 +128,57 @@ function RatingStars({ submission }: { submission: ProductSubmission }) {
 }
 
 function WebsitePreview({ submission }: { submission: ProductSubmission }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || shouldLoad) return;
+
+    let loadTimer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        loadTimer = setTimeout(() => setShouldLoad(true), 600);
+        observer.disconnect();
+      },
+      { rootMargin: '80px' }
+    );
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      if (loadTimer) clearTimeout(loadTimer);
+    };
+  }, [shouldLoad]);
+
   return (
-    <div className='relative h-56 overflow-hidden border-y bg-muted sm:h-64'>
-      <iframe
-        src={submission.websiteUrl}
-        title={`Bản xem trước ${submission.title}`}
-        className='absolute inset-0 bg-background'
-        style={{
-          width: '153.85%',
-          height: '153.85%',
-          transform: 'scale(0.65)',
-          transformOrigin: 'top left'
-        }}
-        loading='lazy'
-        referrerPolicy='no-referrer'
-        sandbox='allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts'
-      />
+    <div ref={containerRef} className='relative h-56 overflow-hidden border-y bg-muted sm:h-64'>
+      {shouldLoad ? (
+        <iframe
+          src={submission.websiteUrl}
+          title={`Bản xem trước ${submission.title}`}
+          className='absolute inset-0 bg-background'
+          style={{
+            width: '153.85%',
+            height: '153.85%',
+            transform: 'scale(0.65)',
+            transformOrigin: 'top left'
+          }}
+          loading='lazy'
+          referrerPolicy='no-referrer'
+          sandbox='allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts'
+        />
+      ) : (
+        <button
+          type='button'
+          className='absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/50 text-sm text-muted-foreground transition-colors hover:bg-muted'
+          onClick={() => setShouldLoad(true)}
+        >
+          <Icons.externalLink className='size-5' />
+          <span>Tải bản xem trước</span>
+        </button>
+      )}
       <div className='pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-black/20 to-transparent' />
     </div>
   );
@@ -173,6 +209,14 @@ function CriteriaManager({
     },
     onError: (error) => toast.error(error.message)
   });
+  const reviewModeMutation = useMutation({
+    mutationFn: updateReviewMode,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: showcaseKeys.all });
+      toast.success('Đã cập nhật cách học sinh chấm bài.');
+    },
+    onError: (error) => toast.error(error.message)
+  });
   const form = useAppForm({
     defaultValues: {
       assignmentId: '',
@@ -200,8 +244,47 @@ function CriteriaManager({
       <CardContent className='grid gap-4 lg:grid-cols-2'>
         {assignments.map((assignment) => (
           <div key={assignment.assignmentId} className='rounded-lg border p-4'>
-            <p className='font-medium'>{assignment.assignmentTitle}</p>
-            <p className='mb-3 text-sm text-muted-foreground'>{assignment.classroomName}</p>
+            <div className='mb-3 flex flex-wrap items-start justify-between gap-3'>
+              <div>
+                <p className='font-medium'>{assignment.assignmentTitle}</p>
+                <p className='text-sm text-muted-foreground'>{assignment.classroomName}</p>
+              </div>
+              <div className='flex rounded-lg border bg-muted/30 p-1'>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={assignment.reviewMode === 'TEAM' ? 'default' : 'ghost'}
+                  className='h-7 px-2.5 text-xs'
+                  disabled={reviewModeMutation.isPending}
+                  onClick={() =>
+                    reviewModeMutation.mutate({
+                      assignmentId: assignment.assignmentId,
+                      reviewMode: 'TEAM'
+                    })
+                  }
+                >
+                  Theo nhóm
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={assignment.reviewMode === 'INDIVIDUAL' ? 'default' : 'ghost'}
+                  className='h-7 px-2.5 text-xs'
+                  disabled={reviewModeMutation.isPending}
+                  onClick={() =>
+                    reviewModeMutation.mutate({
+                      assignmentId: assignment.assignmentId,
+                      reviewMode: 'INDIVIDUAL'
+                    })
+                  }
+                >
+                  Theo cá nhân
+                </Button>
+              </div>
+            </div>
+            <p className='mb-3 text-xs text-muted-foreground'>
+              Đổi cách chấm sẽ xóa các lượt chấm cũ của học sinh; điểm giáo viên được giữ lại.
+            </p>
             {assignment.criteria.length ? (
               <div className='space-y-2'>
                 {assignment.criteria.map((criterion, index) => (
@@ -555,10 +638,14 @@ function DiscussionDialog({
         content: value.content,
         parentId: replyingTo
       }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: showcaseKeys.comments(submission.id)
-      });
+    onSuccess: (createdComment) => {
+      queryClient.setQueryData<DiscussionComment[]>(
+        showcaseKeys.comments(submission.id),
+        (current = []) =>
+          current.some((comment) => comment.id === createdComment.id)
+            ? current
+            : [...current, createdComment]
+      );
       void queryClient.invalidateQueries({ queryKey: showcaseKeys.all });
       form.reset();
       setReplyingTo(null);
@@ -731,6 +818,9 @@ export function ShowcasePage() {
                 <div className='flex flex-wrap gap-2'>
                   <Badge variant='secondary'>{submission.assignmentTitle}</Badge>
                   <Badge variant='outline'>{submission.ratingCount} lượt đánh giá</Badge>
+                  <Badge variant='outline'>
+                    {submission.reviewMode === 'TEAM' ? 'Chấm theo nhóm' : 'Chấm theo cá nhân'}
+                  </Badge>
                 </div>
               </CardContent>
               <CardFooter className='mt-auto flex-wrap gap-2 border-t bg-muted/20'>

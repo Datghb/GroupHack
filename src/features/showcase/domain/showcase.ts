@@ -45,6 +45,18 @@ export function canReviewSubmission(reviewerTeamId: string | null, ownerTeamId: 
   return Boolean(reviewerTeamId && reviewerTeamId !== ownerTeamId);
 }
 
+export function isStudentReviewOwner(
+  review: { reviewerId: string; reviewerTeamId: string | null },
+  student: {
+    reviewMode: 'TEAM' | 'INDIVIDUAL';
+    studentId: string;
+    teamId: string | null;
+  }
+): boolean {
+  if (!student.teamId || review.reviewerTeamId !== student.teamId) return false;
+  return student.reviewMode === 'TEAM' || review.reviewerId === student.studentId;
+}
+
 export function calculateRatingSummary(ratings: number[]): {
   average: number;
   count: number;
