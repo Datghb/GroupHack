@@ -31,74 +31,88 @@ const fontMono = Geist_Mono({
 
 const fontGoogleSansFlex = Google_Sans_Flex({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-google-sans-flex'
 });
 
 const fontSourceCodePro = Source_Code_Pro({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-source-code-pro'
 });
 
 const fontInstrument = Instrument_Sans({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-instrument'
 });
 
 const fontNotoMono = Noto_Sans_Mono({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-noto-mono'
 });
 
 const fontMullish = Mulish({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-mullish'
 });
 
 const fontInter = Inter({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-inter'
 });
 
 const fontArchitectsDaughter = Architects_Daughter({
   subsets: ['latin'],
   weight: '400',
+  preload: false,
   variable: '--font-architects-daughter'
 });
 
 const fontDMSans = DM_Sans({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-dm-sans'
 });
 
 const fontFiraCode = Fira_Code({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-fira-code'
 });
 
 const fontOutfit = Outfit({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-outfit'
 });
 
 const fontSpaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
+  preload: false,
   variable: '--font-space-mono'
 });
 
 const fontJetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-jetbrains-mono'
 });
 
 const fontMerriweather = Merriweather({
   subsets: ['latin'],
   weight: ['300', '400', '700'],
+  preload: false,
   variable: '--font-merriweather'
 });
 
 const fontPlayfairDisplay = Playfair_Display({
   subsets: ['latin'],
+  preload: false,
   variable: '--font-playfair-display'
 });
 

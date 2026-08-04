@@ -60,9 +60,10 @@ export async function GET(
   const { data: profiles } = authorIds.length
     ? await context.db.from('profiles').select('id,full_name,display_name,role').in('id', authorIds)
     : { data: [] };
+  const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
   return NextResponse.json({
     data: (comments ?? []).map((comment) => {
-      const profile = (profiles ?? []).find((item) => item.id === comment.author_id);
+      const profile = profilesById.get(comment.author_id);
       return {
         id: comment.id,
         parentId: comment.parent_id,
