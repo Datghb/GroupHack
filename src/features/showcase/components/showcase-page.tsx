@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -127,22 +127,57 @@ function RatingStars({ submission }: { submission: ProductSubmission }) {
 }
 
 function WebsitePreview({ submission }: { submission: ProductSubmission }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || shouldLoad) return;
+
+    let loadTimer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        loadTimer = setTimeout(() => setShouldLoad(true), 600);
+        observer.disconnect();
+      },
+      { rootMargin: '80px' }
+    );
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      if (loadTimer) clearTimeout(loadTimer);
+    };
+  }, [shouldLoad]);
+
   return (
-    <div className='relative h-56 overflow-hidden border-y bg-muted sm:h-64'>
-      <iframe
-        src={submission.websiteUrl}
-        title={`Bản xem trước ${submission.title}`}
-        className='absolute inset-0 bg-background'
-        style={{
-          width: '153.85%',
-          height: '153.85%',
-          transform: 'scale(0.65)',
-          transformOrigin: 'top left'
-        }}
-        loading='lazy'
-        referrerPolicy='no-referrer'
-        sandbox='allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts'
-      />
+    <div ref={containerRef} className='relative h-56 overflow-hidden border-y bg-muted sm:h-64'>
+      {shouldLoad ? (
+        <iframe
+          src={submission.websiteUrl}
+          title={`Bản xem trước ${submission.title}`}
+          className='absolute inset-0 bg-background'
+          style={{
+            width: '153.85%',
+            height: '153.85%',
+            transform: 'scale(0.65)',
+            transformOrigin: 'top left'
+          }}
+          loading='lazy'
+          referrerPolicy='no-referrer'
+          sandbox='allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts'
+        />
+      ) : (
+        <button
+          type='button'
+          className='absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/50 text-sm text-muted-foreground transition-colors hover:bg-muted'
+          onClick={() => setShouldLoad(true)}
+        >
+          <Icons.externalLink className='size-5' />
+          <span>Tải bản xem trước</span>
+        </button>
+      )}
       <div className='pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-black/20 to-transparent' />
     </div>
   );
