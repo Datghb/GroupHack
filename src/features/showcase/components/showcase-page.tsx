@@ -667,7 +667,7 @@ function DiscussionDialog({
             Giáo viên và học sinh trong lớp có thể trao đổi và trả lời lẫn nhau.
           </DialogDescription>
         </DialogHeader>
-        <div className='showcase-background min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4'>
+        <div className='showcase-background showcase-discussion-background min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4'>
           {isPending ? <Skeleton className='h-20 w-full rounded-xl' /> : null}
           {error ? (
             <p className='rounded-lg bg-destructive/10 p-3 text-sm text-destructive'>
