@@ -61,6 +61,16 @@
     linear-gradient(rgb(2 6 23 / 28%), rgb(2 6 23 / 28%)), url('/showcase-background.png');
 }
 
+.showcase-background.showcase-discussion-background {
+  background-attachment: scroll;
+  background-position: center top;
+}
+
+.dark .showcase-background.showcase-discussion-background {
+  background-image:
+    linear-gradient(rgb(2 6 23 / 8%), rgb(2 6 23 / 8%)), url('/showcase-background.png');
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
