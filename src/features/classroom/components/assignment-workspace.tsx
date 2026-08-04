@@ -1035,7 +1035,9 @@ export function StudentAssignmentWorkspace({
             <Label>Trưởng nhóm mới</Label>
             <Select value={newLeaderId} onValueChange={(value) => setNewLeaderId(value ?? '')}>
               <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Chọn thành viên' />
+                <SelectValue placeholder='Chọn thành viên'>
+                  {transferTeam?.members.find((member) => member.id === newLeaderId)?.fullName}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
