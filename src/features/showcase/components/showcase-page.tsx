@@ -667,7 +667,7 @@ function DiscussionDialog({
             Giáo viên và học sinh trong lớp có thể trao đổi và trả lời lẫn nhau.
           </DialogDescription>
         </DialogHeader>
-        <div className='min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain bg-muted/20 px-5 py-4'>
+        <div className='showcase-background min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4'>
           {isPending ? <Skeleton className='h-20 w-full rounded-xl' /> : null}
           {error ? (
             <p className='rounded-lg bg-destructive/10 p-3 text-sm text-destructive'>
@@ -751,6 +751,9 @@ export function ShowcasePage() {
   const [reviewing, setReviewing] = useState<ProductSubmission | null>(null);
   const [discussing, setDiscussing] = useState<ProductSubmission | null>(null);
   const queryClient = useQueryClient();
+  const prefetchDiscussion = (submissionId: string) => {
+    void queryClient.prefetchQuery(discussionCommentsQueryOptions(submissionId));
+  };
   const { data, isPending, error } = useQuery(showcaseQueryOptions());
   const mutation = useMutation({
     mutationFn: submitProduct,
@@ -838,7 +841,13 @@ export function ShowcasePage() {
                   <Icons.externalLink data-icon='inline-start' />
                   Mở website
                 </Button>
-                <Button variant='outline' onClick={() => setDiscussing(submission)}>
+                <Button
+                  variant='outline'
+                  onPointerEnter={() => prefetchDiscussion(submission.id)}
+                  onPointerDown={() => prefetchDiscussion(submission.id)}
+                  onFocus={() => prefetchDiscussion(submission.id)}
+                  onClick={() => setDiscussing(submission)}
+                >
                   <Icons.chat /> Bình luận
                   {submission.commentCount ? ` (${submission.commentCount})` : ''}
                 </Button>
