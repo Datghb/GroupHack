@@ -191,6 +191,7 @@ export const Icons = {
   product: IconBox,
   pro: IconCrown,
   exclusive: IconStar,
+  star: IconStar,
   sparkles: IconSparkles,
   badgeCheck: IconRosetteDiscountCheck,
   lock: IconLock,

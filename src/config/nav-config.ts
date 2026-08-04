@@ -57,6 +57,13 @@ export const navGroups: NavGroup[] = [
         icon: 'clock',
         items: [],
         access: { role: 'TEACHER' }
+      },
+      {
+        title: 'Showcase sản phẩm',
+        url: '/teacher/showcase',
+        icon: 'galleryVerticalEnd',
+        items: [],
+        access: { role: 'TEACHER' }
       }
     ]
   },
@@ -81,6 +88,13 @@ export const navGroups: NavGroup[] = [
         title: 'Hồ sơ',
         url: '/dashboard/profile',
         icon: 'account',
+        items: [],
+        access: { role: 'STUDENT' }
+      },
+      {
+        title: 'Showcase sản phẩm',
+        url: '/student/showcase',
+        icon: 'galleryVerticalEnd',
         items: [],
         access: { role: 'STUDENT' }
       }

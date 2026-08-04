@@ -7,7 +7,46 @@ const checkpoints = [
 ];
 
 describe('trạng thái hoàn thành checkpoint', () => {
-  test('checkpoint nhóm hoàn thành cho mọi thành viên', () => {
+  test('checkpoint nhóm chỉ hoàn thành khi mọi thành viên đã tick', () => {
+    const partialState = getCheckpointCompletionState({
+      checkpoints,
+      completions: [
+        {
+          checkpoint_id: 'cp-team',
+          completed_by: 'student-1',
+          completion_scope: 'TEAM'
+        }
+      ],
+      memberIds: ['student-1', 'student-2'],
+      currentUserId: 'student-2'
+    });
+
+    expect(partialState.completedCheckpointIds).not.toContain('cp-team');
+    expect(partialState.myCompletedCheckpointIds).not.toContain('cp-team');
+
+    const completedState = getCheckpointCompletionState({
+      checkpoints,
+      completions: [
+        {
+          checkpoint_id: 'cp-team',
+          completed_by: 'student-1',
+          completion_scope: 'TEAM'
+        },
+        {
+          checkpoint_id: 'cp-team',
+          completed_by: 'student-2',
+          completion_scope: 'INDIVIDUAL'
+        }
+      ],
+      memberIds: ['student-1', 'student-2'],
+      currentUserId: 'student-2'
+    });
+
+    expect(completedState.completedCheckpointIds).toContain('cp-team');
+    expect(completedState.myCompletedCheckpointIds).toContain('cp-team');
+  });
+
+  test('chấp nhận dữ liệu lượt tick mới và dữ liệu scope cũ trong cùng checkpoint', () => {
     const state = getCheckpointCompletionState({
       checkpoints,
       completions: [
@@ -15,6 +54,11 @@ describe('trạng thái hoàn thành checkpoint', () => {
           checkpoint_id: 'cp-team',
           completed_by: 'student-1',
           completion_scope: 'TEAM'
+        },
+        {
+          checkpoint_id: 'cp-team',
+          completed_by: 'student-2',
+          completion_scope: 'INDIVIDUAL'
         }
       ],
       memberIds: ['student-1', 'student-2'],

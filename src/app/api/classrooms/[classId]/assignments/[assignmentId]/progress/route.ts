@@ -4,6 +4,7 @@ import { canAccessAssignment } from '@/lib/classroom-access';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { calculateCheckpointProgress } from '@/features/classroom/domain/student-progress';
 import { getCheckpointCompletionState } from '@/features/classroom/domain/checkpoint-completion';
+import { getVisibleTeamMemberProgress } from '@/features/classroom/domain/team-progress-visibility';
 
 export async function GET(
   _request: Request,
@@ -35,6 +36,33 @@ export async function GET(
   const { data: members } = teamIds.length
     ? await db.from('assignment_team_members').select('team_id,student_id').in('team_id', teamIds)
     : { data: [] };
+  const visibleMemberIds = (members ?? [])
+    .filter((member) => member.student_id === userId)
+    .flatMap((membership) =>
+      (members ?? [])
+        .filter((member) => member.team_id === membership.team_id)
+        .map((member) => member.student_id)
+    );
+  const memberUserIds = [...new Set(visibleMemberIds)];
+  const { data: authUsers } = memberUserIds.length
+    ? await db.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    : { data: { users: [] } };
+  const users = new Map(
+    authUsers.users
+      .filter((authUser) => memberUserIds.includes(authUser.id))
+      .map((authUser) => [
+        authUser.id,
+        {
+          id: authUser.id,
+          fullName:
+            authUser.user_metadata.full_name ||
+            authUser.user_metadata.name ||
+            authUser.email ||
+            'Thành viên',
+          avatarUrl: authUser.user_metadata.avatar_url || authUser.user_metadata.picture || null
+        }
+      ])
+  );
   const total = checkpoints?.length ?? 0;
   const data = (teams ?? []).map((team) => {
     const memberIds = (members ?? [])
@@ -64,6 +92,21 @@ export async function GET(
         .map((item) => item.completed_at)
         .toSorted()
         .at(-1) ?? null;
+    const memberProgress = getVisibleTeamMemberProgress({
+      role,
+      userId,
+      memberIds,
+      memberProgress: memberIds.map((memberId) => ({
+        ...(users.get(memberId) ?? {
+          id: memberId,
+          fullName: 'Thành viên',
+          avatarUrl: null
+        }),
+        completedCheckpointIds: teamCompletions
+          .filter((completion) => completion.completed_by === memberId)
+          .map((completion) => completion.checkpoint_id)
+      }))
+    });
     return {
       id: team.id,
       name: team.name,
@@ -71,6 +114,7 @@ export async function GET(
       memberIds,
       completedCheckpointIds: [...completedIds],
       myCompletedCheckpointIds: completionState.myCompletedCheckpointIds,
+      ...(memberProgress && { memberProgress }),
       completedCheckpoints: completedIds.size,
       totalCheckpoints: total,
       currentCheckpoint: current?.title ?? (total ? 'Đã hoàn thành' : 'Chưa có checkpoint'),

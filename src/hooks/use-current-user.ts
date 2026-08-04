@@ -39,7 +39,7 @@ export function CurrentUserProvider({
         fullName:
           profile?.full_name || resolved.user_metadata.full_name || resolved.email || 'Người dùng',
         imageUrl: resolved.user_metadata.avatar_url,
-        role: profile?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT'
+        role: String(profile?.role).toUpperCase() === 'TEACHER' ? 'TEACHER' : 'STUDENT'
       });
     }
     if (!initialUser) void load();

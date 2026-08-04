@@ -11,6 +11,6 @@ export async function getApiAuth() {
     .single();
   return {
     userId,
-    role: profile?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT'
+    role: String(profile?.role).toUpperCase() === 'TEACHER' ? 'TEACHER' : 'STUDENT'
   } as const;
 }

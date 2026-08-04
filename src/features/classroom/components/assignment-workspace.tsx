@@ -60,10 +60,13 @@ import {
 import type {
   AssignmentRecord,
   AssignmentTeamRecord,
-  CheckpointScope
+  CheckpointScope,
+  TeamProgressRecord
 } from '../api/assignment-types';
 import { toIsoDateTime, toLocalDateTime } from '../domain/assignment-dates';
 import { getCheckpointScopeLabel } from '../domain/checkpoint-scope';
+import { updateMyCheckpointCompletion } from '../domain/optimistic-checkpoint-progress';
+import { MemberCheckpointProgress } from './member-checkpoint-progress';
 
 const assignmentSchema = z.object({
   title: z.string().trim().min(3, 'Tên bài tập cần ít nhất 3 ký tự'),
@@ -728,11 +731,40 @@ export function StudentAssignmentWorkspace({
   const progressMutation = useMutation({
     mutationFn: ({ checkpointId, completed }: { checkpointId: string; completed: boolean }) =>
       setCheckpointCompleted(classId, assignmentId, checkpointId, completed),
-    onSuccess: () =>
+    onMutate: ({ checkpointId, completed }) => {
+      const queryKey = assignmentKeys.progress(classId, assignmentId);
+      void queryClient.cancelQueries({ queryKey });
+      const previousProgress = queryClient.getQueryData<TeamProgressRecord[]>(queryKey);
+      const ownTeamId = teams.find((team) => team.memberIds.includes(user?.id ?? ''))?.id;
+
+      if (ownTeamId && user?.id) {
+        queryClient.setQueryData<TeamProgressRecord[]>(queryKey, (currentProgress) =>
+          currentProgress
+            ? updateMyCheckpointCompletion(currentProgress, {
+                teamId: ownTeamId,
+                userId: user.id,
+                checkpointId,
+                completed
+              })
+            : currentProgress
+        );
+      }
+
+      return { previousProgress };
+    },
+    onError: (mutationError, _variables, context) => {
+      if (context?.previousProgress) {
+        queryClient.setQueryData<TeamProgressRecord[]>(
+          assignmentKeys.progress(classId, assignmentId),
+          context.previousProgress
+        );
+      }
+      toast.error(mutationError.message);
+    },
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: assignmentKeys.progress(classId, assignmentId)
-      }),
-    onError: (mutationError) => toast.error(mutationError.message)
+      })
   });
   const { FormTextField } = useFormFields<TeamValues>();
   const form = useAppForm({
@@ -797,7 +829,10 @@ export function StudentAssignmentWorkspace({
                       <Checkbox
                         id={checkboxId}
                         checked={completed}
-                        disabled={progressMutation.isPending}
+                        disabled={
+                          progressMutation.isPending &&
+                          progressMutation.variables?.checkpointId === checkpoint.id
+                        }
                         aria-label={`Đánh dấu checkpoint ${checkpoint.title} là hoàn thành`}
                         onCheckedChange={(checked) =>
                           progressMutation.mutate({
@@ -816,6 +851,12 @@ export function StudentAssignmentWorkspace({
           ))}
         </CardContent>
       </Card>
+      {ownProgress?.memberProgress ? (
+        <MemberCheckpointProgress
+          checkpoints={assignment.checkpoints}
+          members={ownProgress.memberProgress}
+        />
+      ) : null}
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>Nhóm của bài tập</h2>
         <div className='flex gap-2'>
