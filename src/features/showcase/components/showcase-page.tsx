@@ -590,10 +590,14 @@ function DiscussionDialog({
         content: value.content,
         parentId: replyingTo
       }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: showcaseKeys.comments(submission.id)
-      });
+    onSuccess: (createdComment) => {
+      queryClient.setQueryData<DiscussionComment[]>(
+        showcaseKeys.comments(submission.id),
+        (current = []) =>
+          current.some((comment) => comment.id === createdComment.id)
+            ? current
+            : [...current, createdComment]
+      );
       void queryClient.invalidateQueries({ queryKey: showcaseKeys.all });
       form.reset();
       setReplyingTo(null);

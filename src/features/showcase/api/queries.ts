@@ -17,5 +17,7 @@ export const discussionCommentsQueryOptions = (submissionId: string) =>
   queryOptions({
     queryKey: showcaseKeys.comments(submissionId),
     queryFn: () => getDiscussionComments(submissionId),
-    staleTime: 15_000
+    staleTime: 0,
+    refetchInterval: 2_000,
+    refetchIntervalInBackground: false
   });

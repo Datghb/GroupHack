@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getApiAuth } from '@/lib/api-auth';
-import { canAccessAssignment } from '@/lib/classroom-access';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
@@ -15,20 +14,31 @@ async function getContext(submissionId: string) {
   const db = getSupabaseAdmin();
   const { data: submission } = await db
     .from('product_submissions')
-    .select('id,assignment_id')
+    .select('id,assignment_id,assignments!inner(id,classroom_id,course_id)')
     .eq('id', submissionId)
     .maybeSingle();
   if (!submission) return null;
-  const { data: assignment } = await db
-    .from('assignments')
-    .select('id,classroom_id')
-    .eq('id', submission.assignment_id)
-    .maybeSingle();
-  if (
-    !assignment ||
-    !(await canAccessAssignment(userId, role, assignment.classroom_id, assignment.id))
-  )
-    return null;
+  const assignment = submission.assignments as unknown as {
+    id: string;
+    classroom_id: string;
+    course_id: string;
+  };
+  const { data: access } =
+    role === 'TEACHER'
+      ? await db
+          .from('classrooms')
+          .select('id')
+          .eq('id', assignment.classroom_id)
+          .eq('teacher_id', userId)
+          .maybeSingle()
+      : await db
+          .from('class_enrollments')
+          .select('id')
+          .eq('classroom_id', assignment.classroom_id)
+          .eq('course_id', assignment.course_id)
+          .eq('student_id', userId)
+          .maybeSingle();
+  if (!access) return null;
   return { db, userId, role: role ?? 'STUDENT', submission };
 }
 
