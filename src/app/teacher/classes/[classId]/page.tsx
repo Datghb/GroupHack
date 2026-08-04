@@ -9,8 +9,8 @@ export default async function TeacherClassPage({
   const { classId } = await params;
   return (
     <PageContainer
-      pageTitle='Quản lý lớp học'
-      pageDescription='Tạo bài tập và thiết kế checkpoint cho học sinh.'
+      pageTitle='Lớp học'
+      pageDescription='Xem bài tập và tiến độ; chỉ chỉnh sửa những lớp do bạn quản lý.'
     >
       <div className='space-y-6'>
         <TeacherDatabaseClassDetail classId={classId} />

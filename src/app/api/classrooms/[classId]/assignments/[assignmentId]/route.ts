@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getApiAuth } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { canAccessAssignment } from '@/lib/classroom-access';
+import { canAccessAssignment, canManageAssignment } from '@/lib/classroom-access';
 import { getCheckpointTitle } from '@/features/classroom/domain/checkpoint-label';
 
 const updateSchema = z.object({
@@ -87,7 +87,7 @@ export async function PATCH(
 ) {
   const [{ userId, role }, { classId, assignmentId }] = await Promise.all([getApiAuth(), params]);
   if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 });
-  if (role !== 'TEACHER' || !(await canAccessAssignment(userId, role, classId, assignmentId)))
+  if (role !== 'TEACHER' || !(await canManageAssignment(userId, classId, assignmentId)))
     return NextResponse.json(
       { error: 'Bạn không có quyền chỉnh sửa bài tập này.' },
       { status: 403 }
@@ -178,7 +178,7 @@ export async function DELETE(
 ) {
   const [{ userId, role }, { classId, assignmentId }] = await Promise.all([getApiAuth(), params]);
   if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 });
-  if (role !== 'TEACHER' || !(await canAccessAssignment(userId, role, classId, assignmentId)))
+  if (role !== 'TEACHER' || !(await canManageAssignment(userId, classId, assignmentId)))
     return NextResponse.json({ error: 'Bạn không có quyền xóa bài tập này.' }, { status: 403 });
   const { error } = await getSupabaseAdmin().from('assignments').delete().eq('id', assignmentId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

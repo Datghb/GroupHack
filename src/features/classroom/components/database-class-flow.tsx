@@ -86,20 +86,22 @@ export function TeacherDatabaseClasses() {
               </div>
               <CardTitle className='truncate text-base'>{item.name}</CardTitle>
               <Badge variant='secondary' className='text-xs'>
-                Đang mở
+                {item.canManage ? 'Lớp của bạn' : 'Chỉ xem'}
               </Badge>
             </CardHeader>
             <CardContent className='flex items-center justify-between gap-3 border-t pt-3'>
               <span className='text-xs text-muted-foreground'>Quản lý bài tập & checkpoint</span>
               <div className='flex items-center gap-2'>
-                <Button
-                  variant='ghost'
-                  size='icon-sm'
-                  aria-label={`Xóa lớp ${item.name}`}
-                  onClick={() => setClassroomToDelete(item)}
-                >
-                  <Icons.trash className='text-destructive' aria-hidden='true' />
-                </Button>
+                {item.canManage ? (
+                  <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    aria-label={`Xóa lớp ${item.name}`}
+                    onClick={() => setClassroomToDelete(item)}
+                  >
+                    <Icons.trash className='text-destructive' aria-hidden='true' />
+                  </Button>
+                ) : null}
                 <Button
                   variant='outline'
                   size='sm'
@@ -107,7 +109,7 @@ export function TeacherDatabaseClasses() {
                     <Link aria-label={`Mở lớp ${item.name}`} href={`/teacher/classes/${item.id}`} />
                   }
                 >
-                  Mở lớp
+                  {item.canManage ? 'Quản lý' : 'Xem lớp'}
                   <Icons.arrowRight aria-hidden='true' />
                 </Button>
               </div>
@@ -385,10 +387,14 @@ export function TeacherDatabaseClassDetail({ classId }: { classId: string }) {
       <CardHeader>
         <CardTitle>{classroom.name}</CardTitle>
         <CardAction>
-          <Badge variant='secondary'>Đang mở</Badge>
+          <Badge variant='secondary'>{classroom.canManage ? 'Lớp của bạn' : 'Chỉ xem'}</Badge>
         </CardAction>
       </CardHeader>
-      <CardContent>Học sinh có thể nhìn thấy và tham gia lớp này.</CardContent>
+      <CardContent>
+        {classroom.canManage
+          ? 'Bạn có thể quản lý bài tập và checkpoint của lớp này.'
+          : 'Lớp của giáo viên khác. Bạn có thể xem bài tập và tiến độ nhưng không thể chỉnh sửa.'}
+      </CardContent>
     </Card>
   );
 }

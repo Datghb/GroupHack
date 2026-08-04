@@ -35,6 +35,7 @@ export interface AssignmentTeamRecord {
   leaderId: string;
   capacity: number;
   open: boolean;
+  hasSubmission: boolean;
   memberIds: string[];
   members: Array<{ id: string; fullName: string; avatarUrl: string | null }>;
   myRequestStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
@@ -48,6 +49,9 @@ export interface TeamJoinRequestResult {
   id: string;
   teamId: string;
   status: 'PENDING';
+}
+export interface LeaveAssignmentTeamResult {
+  status: 'LEFT' | 'DISBANDED';
 }
 export interface CreateAssignmentPayload {
   title: string;

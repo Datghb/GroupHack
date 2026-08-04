@@ -11,7 +11,7 @@ export async function canAccessClassroom(
       .from('classrooms')
       .select('id')
       .eq('id', classId)
-      .eq('teacher_id', userId)
+      .eq('archived', false)
       .maybeSingle();
     return Boolean(data);
   }
@@ -20,6 +20,31 @@ export async function canAccessClassroom(
     .select('id')
     .eq('classroom_id', classId)
     .eq('student_id', userId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+export async function canManageClassroom(userId: string, classId: string): Promise<boolean> {
+  const { data } = await getSupabaseAdmin()
+    .from('classrooms')
+    .select('id')
+    .eq('id', classId)
+    .eq('teacher_id', userId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+export async function canManageAssignment(
+  userId: string,
+  classId: string,
+  assignmentId: string
+): Promise<boolean> {
+  if (!(await canManageClassroom(userId, classId))) return false;
+  const { data } = await getSupabaseAdmin()
+    .from('assignments')
+    .select('id')
+    .eq('id', assignmentId)
+    .eq('classroom_id', classId)
     .maybeSingle();
   return Boolean(data);
 }

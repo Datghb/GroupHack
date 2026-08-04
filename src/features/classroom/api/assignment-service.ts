@@ -3,6 +3,7 @@ import type {
   AssignmentTeamRecord,
   ClassroomCourses,
   CreateAssignmentPayload,
+  LeaveAssignmentTeamResult,
   TeamJoinRequestResult,
   TeamProgressRecord,
   UpdateAssignmentPayload
@@ -74,6 +75,21 @@ export const reviewTeamJoinRequest = (
   request<{ status: 'APPROVED' | 'REJECTED' }>(
     `/api/classrooms/${classId}/assignments/${assignmentId}/teams/${teamId}/requests/${requestId}`,
     { method: 'PATCH', body: JSON.stringify({ action }) }
+  );
+export const leaveAssignmentTeam = (classId: string, assignmentId: string, teamId: string) =>
+  request<LeaveAssignmentTeamResult>(
+    `/api/classrooms/${classId}/assignments/${assignmentId}/teams/${teamId}/leave`,
+    { method: 'DELETE' }
+  );
+export const transferAssignmentTeamLeader = (
+  classId: string,
+  assignmentId: string,
+  teamId: string,
+  newLeaderId: string
+) =>
+  request<{ status: 'TRANSFERRED' }>(
+    `/api/classrooms/${classId}/assignments/${assignmentId}/teams/${teamId}/leader`,
+    { method: 'PATCH', body: JSON.stringify({ newLeaderId }) }
   );
 export const getAssignmentProgress = (classId: string, assignmentId: string) =>
   request<TeamProgressRecord[]>(`/api/classrooms/${classId}/assignments/${assignmentId}/progress`);

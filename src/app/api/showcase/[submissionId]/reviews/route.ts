@@ -31,15 +31,15 @@ export async function POST(
   const reviewMode = assignmentReviewMode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM';
   let reviewerTeamId: string | null = null;
   if (role === 'TEACHER') {
-    const { data: managedAssignment } = await db
+    const { data: accessibleAssignment } = await db
       .from('assignments')
-      .select('id,classrooms!inner(teacher_id)')
+      .select('id,classrooms!inner(archived)')
       .eq('id', submission.assignment_id)
-      .eq('classrooms.teacher_id', userId)
+      .eq('classrooms.archived', false)
       .maybeSingle();
-    if (!managedAssignment)
+    if (!accessibleAssignment)
       return NextResponse.json(
-        { error: 'Bạn không quản lý lớp của sản phẩm này.' },
+        { error: 'Bạn không thể đánh giá sản phẩm của lớp này.' },
         { status: 403 }
       );
   } else {

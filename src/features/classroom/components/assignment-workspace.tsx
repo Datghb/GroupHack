@@ -52,9 +52,11 @@ import {
   createAssignmentTeam,
   deleteAssignment,
   joinAssignmentTeam,
+  leaveAssignmentTeam,
   reviewTeamJoinRequest,
   setCheckpointCompleted,
   selectClassroomCourse,
+  transferAssignmentTeamLeader,
   updateAssignment
 } from '../api/assignment-service';
 import type {
@@ -67,6 +69,7 @@ import { toIsoDateTime, toLocalDateTime } from '../domain/assignment-dates';
 import { getCheckpointScopeLabel } from '../domain/checkpoint-scope';
 import { updateMyCheckpointCompletion } from '../domain/optimistic-checkpoint-progress';
 import { MemberCheckpointProgress } from './member-checkpoint-progress';
+import { classroomsQueryOptions } from '../api/queries';
 
 const assignmentSchema = z.object({
   title: z.string().trim().min(3, 'Tên bài tập cần ít nhất 3 ký tự'),
@@ -95,15 +98,21 @@ function TeamMiniCard({
   currentUserId,
   joining,
   reviewing,
+  leaving,
   onJoin,
-  onReview
+  onReview,
+  onLeave,
+  onTransferLeader
 }: {
   team: AssignmentTeamRecord;
   currentUserId?: string;
   joining: boolean;
   reviewing: boolean;
+  leaving: boolean;
   onJoin: () => void;
   onReview: (requestId: string, action: 'APPROVE' | 'REJECT') => void;
+  onLeave: () => void;
+  onTransferLeader: () => void;
 }) {
   const isMember = team.memberIds.includes(currentUserId ?? '');
   const isLeader = team.leaderId === currentUserId;
@@ -185,6 +194,27 @@ function TeamMiniCard({
             ))}
           </div>
         )}
+        {isMember ? (
+          <div className='flex flex-wrap gap-2 border-t pt-3'>
+            {isLeader && team.memberIds.length > 1 ? (
+              <Button size='sm' variant='outline' onClick={onTransferLeader}>
+                <Icons.teams /> Chuyển trưởng nhóm
+              </Button>
+            ) : (
+              <Button
+                size='sm'
+                variant='outline'
+                className='text-destructive'
+                disabled={leaving || team.hasSubmission}
+                title={team.hasSubmission ? 'Nhóm đã đăng sản phẩm nên không thể rời.' : undefined}
+                onClick={onLeave}
+              >
+                {leaving ? <Icons.spinner className='animate-spin' /> : <Icons.logout />}
+                Rời nhóm
+              </Button>
+            )}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -196,6 +226,8 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [checkpoints, setCheckpoints] = useState<CheckpointDraft[]>([EMPTY_CHECKPOINT]);
   const queryClient = useQueryClient();
+  const { data: classrooms = [] } = useQuery(classroomsQueryOptions());
+  const canManage = classrooms.find((classroom) => classroom.id === classId)?.canManage ?? false;
   const { data: courseData } = useQuery(classroomCoursesQueryOptions(classId));
   const effectiveCourseId = selectedCourseId || courseData?.courses[0]?.id || '';
   const effectiveCourseName = courseData?.courses.find(
@@ -310,10 +342,14 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Icons.add data-icon='inline-start' />
-          Tạo bài tập
-        </Button>
+        {canManage ? (
+          <Button onClick={openCreateDialog}>
+            <Icons.add data-icon='inline-start' />
+            Tạo bài tập
+          </Button>
+        ) : (
+          <Badge variant='outline'>Chế độ chỉ xem</Badge>
+        )}
       </div>
       {!data.length && (
         <Card>
@@ -365,25 +401,29 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
               >
                 <Icons.trendingUp /> Theo dõi tiến độ
               </Button>
-              <Button variant='outline' onClick={() => openEditDialog(assignment)}>
-                <Icons.edit data-icon='inline-start' />
-                Chỉnh sửa
-              </Button>
-              <Button
-                variant='ghost'
-                className='text-destructive'
-                disabled={deleteMutation.isPending}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Xóa bài tập “${assignment.title}” và toàn bộ dữ liệu liên quan?`
-                    )
-                  )
-                    deleteMutation.mutate(assignment.id);
-                }}
-              >
-                <Icons.trash /> Xóa bài tập
-              </Button>
+              {canManage ? (
+                <>
+                  <Button variant='outline' onClick={() => openEditDialog(assignment)}>
+                    <Icons.edit data-icon='inline-start' />
+                    Chỉnh sửa
+                  </Button>
+                  <Button
+                    variant='ghost'
+                    className='text-destructive'
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Xóa bài tập “${assignment.title}” và toàn bộ dữ liệu liên quan?`
+                        )
+                      )
+                        deleteMutation.mutate(assignment.id);
+                    }}
+                  >
+                    <Icons.trash /> Xóa bài tập
+                  </Button>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         ))}
@@ -667,6 +707,8 @@ export function StudentAssignmentWorkspace({
 }) {
   const { user } = useCurrentUser();
   const [open, setOpen] = useState(false);
+  const [transferTeam, setTransferTeam] = useState<AssignmentTeamRecord | null>(null);
+  const [newLeaderId, setNewLeaderId] = useState('');
   const queryClient = useQueryClient();
   const {
     data: assignment,
@@ -727,6 +769,27 @@ export function StudentAssignmentWorkspace({
       );
     },
     onError: (reviewError) => toast.error(reviewError.message)
+  });
+  const leaveMutation = useMutation({
+    mutationFn: (teamId: string) => leaveAssignmentTeam(classId, assignmentId, teamId),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: assignmentKeys.all });
+      toast.success(result.status === 'DISBANDED' ? 'Đã rời và xóa nhóm trống.' : 'Đã rời nhóm.');
+    },
+    onError: (leaveError) => toast.error(leaveError.message)
+  });
+  const transferMutation = useMutation({
+    mutationFn: ({ teamId, leaderId }: { teamId: string; leaderId: string }) =>
+      transferAssignmentTeamLeader(classId, assignmentId, teamId, leaderId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: assignmentKeys.teams(classId, assignmentId)
+      });
+      setTransferTeam(null);
+      setNewLeaderId('');
+      toast.success('Đã chuyển quyền trưởng nhóm.');
+    },
+    onError: (transferError) => toast.error(transferError.message)
   });
   const progressMutation = useMutation({
     mutationFn: ({ checkpointId, completed }: { checkpointId: string; completed: boolean }) =>
@@ -888,10 +951,19 @@ export function StudentAssignmentWorkspace({
               currentUserId={user?.id}
               joining={joinMutation.isPending}
               reviewing={reviewMutation.isPending}
+              leaving={leaveMutation.isPending && leaveMutation.variables === team.id}
               onJoin={() => joinMutation.mutate(team.id)}
               onReview={(requestId, action) =>
                 reviewMutation.mutate({ teamId: team.id, requestId, action })
               }
+              onLeave={() => {
+                if (window.confirm(`Bạn chắc chắn muốn rời nhóm “${team.name}”?`))
+                  leaveMutation.mutate(team.id);
+              }}
+              onTransferLeader={() => {
+                setTransferTeam(team);
+                setNewLeaderId('');
+              }}
             />
           ))}
         </div>
@@ -939,6 +1011,60 @@ export function StudentAssignmentWorkspace({
             </Button>
             <Button type='submit' form='assignment-team-form' disabled={createMutation.isPending}>
               Tạo nhóm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(transferTeam)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setTransferTeam(null);
+            setNewLeaderId('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chuyển quyền trưởng nhóm</DialogTitle>
+            <DialogDescription>
+              Sau khi chuyển quyền, bạn trở thành thành viên thường và có thể rời nhóm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-2'>
+            <Label>Trưởng nhóm mới</Label>
+            <Select value={newLeaderId} onValueChange={(value) => setNewLeaderId(value ?? '')}>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Chọn thành viên'>
+                  {transferTeam?.members.find((member) => member.id === newLeaderId)?.fullName}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {transferTeam?.members
+                    .filter((member) => member.id !== user?.id)
+                    .map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.fullName}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setTransferTeam(null)}>
+              Hủy
+            </Button>
+            <Button
+              disabled={!newLeaderId || transferMutation.isPending}
+              onClick={() => {
+                if (transferTeam)
+                  transferMutation.mutate({ teamId: transferTeam.id, leaderId: newLeaderId });
+              }}
+            >
+              {transferMutation.isPending ? <Icons.spinner className='animate-spin' /> : null}
+              Chuyển quyền
             </Button>
           </DialogFooter>
         </DialogContent>

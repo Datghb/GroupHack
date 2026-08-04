@@ -29,7 +29,7 @@ async function getContext(submissionId: string) {
           .from('classrooms')
           .select('id')
           .eq('id', assignment.classroom_id)
-          .eq('teacher_id', userId)
+          .eq('archived', false)
           .maybeSingle()
       : await db
           .from('class_enrollments')
