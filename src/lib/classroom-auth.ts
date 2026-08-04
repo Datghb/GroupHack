@@ -22,7 +22,10 @@ const getAuthContext = cache(async () => {
     fullName:
       profile?.full_name ||
       (typeof data.claims.email === 'string' ? data.claims.email : 'Người dùng'),
-    role: profile?.role === 'TEACHER' ? ('TEACHER' as const) : ('STUDENT' as const)
+    role:
+      String(profile?.role).toUpperCase() === 'TEACHER'
+        ? ('TEACHER' as const)
+        : ('STUDENT' as const)
   };
 });
 

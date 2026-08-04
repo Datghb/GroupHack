@@ -1,3 +1,4 @@
+import { BrandLogo } from '@/components/brand-logo';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Metadata } from 'next';
@@ -25,19 +26,8 @@ export default function SignInViewPage() {
       <div className='relative hidden h-full flex-col p-10 lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-sidebar' />
         <div className='text-sidebar-foreground relative z-20 flex items-center text-lg font-medium'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            className='mr-2 h-6 w-6'
-          >
-            <path d='M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3' />
-          </svg>
-          Tiến độ lớp học
+          <BrandLogo className='mr-3 size-12' priority />
+          <span>VICheck · Tiến độ lớp học</span>
         </div>
         <InteractiveGridPattern
           className={cn(

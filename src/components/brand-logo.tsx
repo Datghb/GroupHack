@@ -10,12 +10,12 @@ interface BrandLogoProps {
 export function BrandLogo({ alt = 'VICheck', className, priority = false }: BrandLogoProps) {
   return (
     <Image
-      src='/vicheck-logo.png'
+      src='/vcheck3-logo-40.png'
       alt={alt}
       width={512}
       height={512}
       priority={priority}
-      className={cn('size-8 rounded-lg object-cover', className)}
+      className={cn('size-9 rounded-full object-cover', className)}
     />
   );
 }

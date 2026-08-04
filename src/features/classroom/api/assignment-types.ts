@@ -76,6 +76,12 @@ export interface TeamProgressRecord {
   memberIds: string[];
   completedCheckpointIds: string[];
   myCompletedCheckpointIds: string[];
+  memberProgress?: Array<{
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    completedCheckpointIds: string[];
+  }>;
   completedCheckpoints: number;
   totalCheckpoints: number;
   currentCheckpoint: string;

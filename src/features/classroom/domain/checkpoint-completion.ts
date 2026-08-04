@@ -27,29 +27,14 @@ export function getCheckpointCompletionState({
 } {
   const completedCheckpointIds = checkpoints.flatMap((checkpoint) => {
     const relevant = completions.filter((completion) => completion.checkpoint_id === checkpoint.id);
-    if (checkpoint.scope === 'TEAM')
-      return relevant.some((completion) => completion.completion_scope === 'TEAM')
-        ? [checkpoint.id]
-        : [];
-    const completedMembers = new Set(
-      relevant
-        .filter((completion) => completion.completion_scope === 'INDIVIDUAL')
-        .map((completion) => completion.completed_by)
-    );
+    const completedMembers = new Set(relevant.map((completion) => completion.completed_by));
     return memberIds.length > 0 && memberIds.every((memberId) => completedMembers.has(memberId))
       ? [checkpoint.id]
       : [];
   });
   const myCompletedCheckpointIds = checkpoints.flatMap((checkpoint) => {
     const relevant = completions.filter((completion) => completion.checkpoint_id === checkpoint.id);
-    const completed =
-      checkpoint.scope === 'TEAM'
-        ? relevant.some((completion) => completion.completion_scope === 'TEAM')
-        : relevant.some(
-            (completion) =>
-              completion.completion_scope === 'INDIVIDUAL' &&
-              completion.completed_by === currentUserId
-          );
+    const completed = relevant.some((completion) => completion.completed_by === currentUserId);
     return completed ? [checkpoint.id] : [];
   });
   return { completedCheckpointIds, myCompletedCheckpointIds };

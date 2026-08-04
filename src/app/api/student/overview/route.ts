@@ -5,6 +5,7 @@ import {
   calculateCheckpointProgress,
   isAssignmentCompleted
 } from '@/features/classroom/domain/student-progress';
+import { getCheckpointCompletionState } from '@/features/classroom/domain/checkpoint-completion';
 
 export async function GET() {
   const { userId, role } = await getApiAuth();
@@ -20,7 +21,13 @@ export async function GET() {
   const classIds = (enrollments ?? []).map((item) => item.classroom_id);
   if (!classIds.length)
     return NextResponse.json({
-      data: { classCount: 0, assignmentCount: 0, teamCount: 0, completedCount: 0, assignments: [] }
+      data: {
+        classCount: 0,
+        assignmentCount: 0,
+        teamCount: 0,
+        completedCount: 0,
+        assignments: []
+      }
     });
 
   const courseIds = (enrollments ?? []).map((item) => item.course_id).filter(Boolean);
@@ -46,7 +53,7 @@ export async function GET() {
     assignmentIds.length
       ? db
           .from('assignment_checkpoints')
-          .select('id,assignment_id')
+          .select('id,assignment_id,scope')
           .in('assignment_id', assignmentIds)
       : Promise.resolve({ data: [] })
   ]);
@@ -54,16 +61,38 @@ export async function GET() {
   const { data: completions } = teamIds.length
     ? await db
         .from('checkpoint_completions')
-        .select('assignment_id,team_id,checkpoint_id')
+        .select('assignment_id,team_id,checkpoint_id,completed_by,completion_scope')
         .in('team_id', teamIds)
+    : { data: [] };
+  const { data: teamMembers } = teamIds.length
+    ? await db.from('assignment_team_members').select('team_id,student_id').in('team_id', teamIds)
     : { data: [] };
   const assignmentRows = (assignments ?? []).map((assignment) => {
     const membership = (memberships ?? []).find((item) => item.assignment_id === assignment.id);
-    const total = (checkpoints ?? []).filter((item) => item.assignment_id === assignment.id).length;
+    const assignmentCheckpoints = (checkpoints ?? []).filter(
+      (item) => item.assignment_id === assignment.id
+    );
+    const total = assignmentCheckpoints.length;
     const completed = membership
-      ? (completions ?? []).filter(
-          (item) => item.assignment_id === assignment.id && item.team_id === membership.team_id
-        ).length
+      ? getCheckpointCompletionState({
+          checkpoints: assignmentCheckpoints.map((checkpoint) => ({
+            id: checkpoint.id,
+            scope: checkpoint.scope as 'INDIVIDUAL' | 'TEAM'
+          })),
+          completions: (completions ?? [])
+            .filter(
+              (item) => item.assignment_id === assignment.id && item.team_id === membership.team_id
+            )
+            .map((completion) => ({
+              checkpoint_id: completion.checkpoint_id,
+              completed_by: completion.completed_by,
+              completion_scope: completion.completion_scope as 'INDIVIDUAL' | 'TEAM'
+            })),
+          memberIds: (teamMembers ?? [])
+            .filter((member) => member.team_id === membership.team_id)
+            .map((member) => member.student_id),
+          currentUserId: userId
+        }).completedCheckpointIds.length
       : 0;
     return {
       id: assignment.id,
