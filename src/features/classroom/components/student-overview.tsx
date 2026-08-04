@@ -1,32 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Icons } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from './stat-card';
 
-interface StudentOverviewData {
-  classCount: number;
-  assignmentCount: number;
-  teamCount: number;
-  completedCount: number;
-  assignments: Array<{
-    id: string;
-    classId: string;
-    title: string;
-    className: string;
-    dueAt: string | null;
-    hasTeam: boolean;
-    completed: number;
-    total: number;
-    progress: number;
-  }>;
-}
+import type { StudentOverviewData } from '../api/student-overview';
+import { studentOverviewKey } from '../api/student-overview-query';
 async function getStudentOverview(): Promise<StudentOverviewData> {
   const response = await fetch('/api/student/overview');
   const body = (await response.json()) as { data?: StudentOverviewData; error?: string };
@@ -35,13 +19,10 @@ async function getStudentOverview(): Promise<StudentOverviewData> {
 }
 
 export function StudentOverview() {
-  const { data, isPending, error } = useQuery({
-    queryKey: ['student-overview'],
+  const { data } = useSuspenseQuery({
+    queryKey: studentOverviewKey,
     queryFn: getStudentOverview
   });
-  if (isPending) return <Skeleton className='h-80 w-full' />;
-  if (error || !data)
-    return <p className='text-destructive'>{error?.message ?? 'Không thể tải dữ liệu.'}</p>;
   return (
     <div className='space-y-4'>
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
