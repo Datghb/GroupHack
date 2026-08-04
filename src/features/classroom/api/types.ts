@@ -2,6 +2,7 @@ import type { Classroom } from '../domain/types';
 
 export interface ClassroomRecord extends Classroom {
   joined: boolean;
+  canManage: boolean;
 }
 export interface CreateClassroomPayload {
   name: string;

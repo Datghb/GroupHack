@@ -27,17 +27,22 @@ export async function GET() {
   const db = getSupabaseAdmin();
   const { data: classrooms } =
     role === 'TEACHER'
-      ? await db.from('classrooms').select('id,name').eq('teacher_id', userId).eq('archived', false)
+      ? await db.from('classrooms').select('id,name,teacher_id').eq('archived', false)
       : await db
           .from('class_enrollments')
-          .select('classrooms!inner(id,name)')
+          .select('classrooms!inner(id,name,teacher_id)')
           .eq('student_id', userId);
   const classRows = (classrooms ?? []).map((row) => {
     const classroom =
-      'classrooms' in row ? (row.classrooms as unknown as { id: string; name: string }) : row;
-    return { id: classroom.id, name: classroom.name };
+      'classrooms' in row
+        ? (row.classrooms as unknown as { id: string; name: string; teacher_id: string })
+        : row;
+    return { id: classroom.id, name: classroom.name, teacherId: classroom.teacher_id };
   });
   const classIds = classRows.map((item) => item.id);
+  const managedClassIds = new Set(
+    classRows.filter((item) => item.teacherId === userId).map((item) => item.id)
+  );
   if (!classIds.length)
     return NextResponse.json({
       data: {
@@ -286,22 +291,24 @@ export async function GET() {
       publishableAssignments,
       manageableAssignments:
         role === 'TEACHER'
-          ? (assignments ?? []).map((assignment) => ({
-              assignmentId: assignment.id,
-              assignmentTitle: assignment.title,
-              classroomName:
-                classRows.find((item) => item.id === assignment.classroom_id)?.name ?? 'Lớp học',
-              criteria: (criteria ?? [])
-                .filter((criterion) => criterion.assignment_id === assignment.id)
-                .map((criterion) => ({
-                  id: criterion.id,
-                  assignmentId: criterion.assignment_id,
-                  title: criterion.title,
-                  description: criterion.description,
-                  position: criterion.position
-                })),
-              reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
-            }))
+          ? (assignments ?? [])
+              .filter((assignment) => managedClassIds.has(assignment.classroom_id))
+              .map((assignment) => ({
+                assignmentId: assignment.id,
+                assignmentTitle: assignment.title,
+                classroomName:
+                  classRows.find((item) => item.id === assignment.classroom_id)?.name ?? 'Lớp học',
+                criteria: (criteria ?? [])
+                  .filter((criterion) => criterion.assignment_id === assignment.id)
+                  .map((criterion) => ({
+                    id: criterion.id,
+                    assignmentId: criterion.assignment_id,
+                    title: criterion.title,
+                    description: criterion.description,
+                    position: criterion.position
+                  })),
+                reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
+              }))
           : []
     }
   });

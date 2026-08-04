@@ -36,13 +36,16 @@ export async function GET(
   const { data: members } = teamIds.length
     ? await db.from('assignment_team_members').select('team_id,student_id').in('team_id', teamIds)
     : { data: [] };
-  const visibleMemberIds = (members ?? [])
-    .filter((member) => member.student_id === userId)
-    .flatMap((membership) =>
-      (members ?? [])
-        .filter((member) => member.team_id === membership.team_id)
-        .map((member) => member.student_id)
-    );
+  const visibleMemberIds =
+    role === 'TEACHER'
+      ? (members ?? []).map((member) => member.student_id)
+      : (members ?? [])
+          .filter((member) => member.student_id === userId)
+          .flatMap((membership) =>
+            (members ?? [])
+              .filter((member) => member.team_id === membership.team_id)
+              .map((member) => member.student_id)
+          );
   const memberUserIds = [...new Set(visibleMemberIds)];
   const { data: authUsers } = memberUserIds.length
     ? await db.auth.admin.listUsers({ page: 1, perPage: 1000 })

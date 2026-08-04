@@ -67,6 +67,7 @@ import { toIsoDateTime, toLocalDateTime } from '../domain/assignment-dates';
 import { getCheckpointScopeLabel } from '../domain/checkpoint-scope';
 import { updateMyCheckpointCompletion } from '../domain/optimistic-checkpoint-progress';
 import { MemberCheckpointProgress } from './member-checkpoint-progress';
+import { classroomsQueryOptions } from '../api/queries';
 
 const assignmentSchema = z.object({
   title: z.string().trim().min(3, 'Tên bài tập cần ít nhất 3 ký tự'),
@@ -196,6 +197,8 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [checkpoints, setCheckpoints] = useState<CheckpointDraft[]>([EMPTY_CHECKPOINT]);
   const queryClient = useQueryClient();
+  const { data: classrooms = [] } = useQuery(classroomsQueryOptions());
+  const canManage = classrooms.find((classroom) => classroom.id === classId)?.canManage ?? false;
   const { data: courseData } = useQuery(classroomCoursesQueryOptions(classId));
   const effectiveCourseId = selectedCourseId || courseData?.courses[0]?.id || '';
   const effectiveCourseName = courseData?.courses.find(
@@ -310,10 +313,14 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Icons.add data-icon='inline-start' />
-          Tạo bài tập
-        </Button>
+        {canManage ? (
+          <Button onClick={openCreateDialog}>
+            <Icons.add data-icon='inline-start' />
+            Tạo bài tập
+          </Button>
+        ) : (
+          <Badge variant='outline'>Chế độ chỉ xem</Badge>
+        )}
       </div>
       {!data.length && (
         <Card>
@@ -365,25 +372,29 @@ export function TeacherAssignmentManager({ classId }: { classId: string }) {
               >
                 <Icons.trendingUp /> Theo dõi tiến độ
               </Button>
-              <Button variant='outline' onClick={() => openEditDialog(assignment)}>
-                <Icons.edit data-icon='inline-start' />
-                Chỉnh sửa
-              </Button>
-              <Button
-                variant='ghost'
-                className='text-destructive'
-                disabled={deleteMutation.isPending}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Xóa bài tập “${assignment.title}” và toàn bộ dữ liệu liên quan?`
-                    )
-                  )
-                    deleteMutation.mutate(assignment.id);
-                }}
-              >
-                <Icons.trash /> Xóa bài tập
-              </Button>
+              {canManage ? (
+                <>
+                  <Button variant='outline' onClick={() => openEditDialog(assignment)}>
+                    <Icons.edit data-icon='inline-start' />
+                    Chỉnh sửa
+                  </Button>
+                  <Button
+                    variant='ghost'
+                    className='text-destructive'
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Xóa bài tập “${assignment.title}” và toàn bộ dữ liệu liên quan?`
+                        )
+                      )
+                        deleteMutation.mutate(assignment.id);
+                    }}
+                  >
+                    <Icons.trash /> Xóa bài tập
+                  </Button>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         ))}

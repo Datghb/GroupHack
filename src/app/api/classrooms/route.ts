@@ -2,6 +2,7 @@ import { getApiAuth } from '@/lib/api-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { canDeleteClassroom } from '@/features/classroom/domain/classroom-deletion';
 
 const schema = z.object({
   name: z.string().trim().min(3).max(120),
@@ -13,7 +14,6 @@ export async function GET() {
   try {
     const db = getSupabaseAdmin();
     let classesQuery = db.from('classrooms').select('*').eq('archived', false);
-    if (role === 'TEACHER') classesQuery = classesQuery.eq('teacher_id', userId);
     const [{ data: classes, error }, { data: enrollments }] = await Promise.all([
       classesQuery.order('created_at', { ascending: false }),
       db.from('class_enrollments').select('classroom_id').eq('student_id', userId)
@@ -28,7 +28,8 @@ export async function GET() {
       archived: item.archived,
       studentCount: 0,
       teamCount: 0,
-      joined: joinedIds.has(item.id)
+      joined: joinedIds.has(item.id),
+      canManage: canDeleteClassroom(role, item.teacher_id, userId)
     }));
     return NextResponse.json({ data });
   } catch (error) {
@@ -72,7 +73,8 @@ export async function POST(request: Request) {
           archived: data.archived,
           studentCount: 0,
           teamCount: 0,
-          joined: false
+          joined: false,
+          canManage: true
         }
       },
       { status: 201 }
