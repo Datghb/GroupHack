@@ -48,6 +48,7 @@ export interface ProductSubmission {
   criteria: ReviewCriterion[];
   criterionSummaries: CriterionRatingSummary[];
   commentCount: number;
+  reviewMode: 'TEAM' | 'INDIVIDUAL';
 }
 
 export interface ShowcaseResponse {
@@ -66,6 +67,7 @@ export interface ShowcaseResponse {
     assignmentTitle: string;
     classroomName: string;
     criteria: ReviewCriterion[];
+    reviewMode: 'TEAM' | 'INDIVIDUAL';
   }>;
 }
 
@@ -88,4 +90,9 @@ export interface CreateDiscussionCommentPayload {
 export interface CreateCriterionPayload {
   assignmentId: string;
   criteria: Array<{ title: string; description: string }>;
+}
+
+export interface UpdateReviewModePayload {
+  assignmentId: string;
+  reviewMode: 'TEAM' | 'INDIVIDUAL';
 }

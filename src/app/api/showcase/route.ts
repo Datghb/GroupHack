@@ -5,7 +5,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCheckpointCompletionState } from '@/features/classroom/domain/checkpoint-completion';
 import {
   calculateRatingSummary,
-  canPublishAssignmentProduct
+  canPublishAssignmentProduct,
+  isStudentReviewOwner
 } from '@/features/showcase/domain/showcase';
 
 const submissionSchema = z.object({
@@ -50,7 +51,7 @@ export async function GET() {
 
   const { data: assignments, error: assignmentError } = await db
     .from('assignments')
-    .select('id,title,classroom_id')
+    .select('id,title,classroom_id,review_mode')
     .in('classroom_id', classIds);
   if (assignmentError)
     return NextResponse.json({ error: assignmentError.message }, { status: 500 });
@@ -101,7 +102,7 @@ export async function GET() {
     submissionIds.length
       ? db
           .from('product_reviews')
-          .select('id,submission_id,reviewer_team_id,reviewer_id,rating,created_at')
+          .select('id,submission_id,reviewer_team_id,reviewer_id,rating,created_at,review_mode')
           .in('submission_id', submissionIds)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -173,7 +174,19 @@ export async function GET() {
         ? submissionReviews.find(
             (review) => review.reviewer_id === userId && !review.reviewer_team_id
           )
-        : submissionReviews.find((review) => review.reviewer_team_id === myTeam?.team_id);
+        : submissionReviews.find((review) =>
+            isStudentReviewOwner(
+              {
+                reviewerId: review.reviewer_id,
+                reviewerTeamId: review.reviewer_team_id
+              },
+              {
+                reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM',
+                studentId: userId,
+                teamId: myTeam?.team_id ?? null
+              }
+            )
+          );
     return {
       id: submission.id,
       assignmentId: submission.assignment_id,
@@ -205,7 +218,8 @@ export async function GET() {
       }),
       commentCount: (discussionComments ?? []).filter(
         (comment) => comment.submission_id === submission.id
-      ).length
+      ).length,
+      reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
     };
   });
 
@@ -285,7 +299,8 @@ export async function GET() {
                   title: criterion.title,
                   description: criterion.description,
                   position: criterion.position
-                }))
+                })),
+              reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
             }))
           : []
     }

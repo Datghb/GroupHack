@@ -37,7 +37,8 @@ import {
   createDiscussionComment,
   deleteCriterion,
   reviewProduct,
-  submitProduct
+  submitProduct,
+  updateReviewMode
 } from '../api/service';
 import type { DiscussionComment, ProductSubmission, ShowcaseResponse } from '../api/types';
 
@@ -208,6 +209,14 @@ function CriteriaManager({
     },
     onError: (error) => toast.error(error.message)
   });
+  const reviewModeMutation = useMutation({
+    mutationFn: updateReviewMode,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: showcaseKeys.all });
+      toast.success('Đã cập nhật cách học sinh chấm bài.');
+    },
+    onError: (error) => toast.error(error.message)
+  });
   const form = useAppForm({
     defaultValues: {
       assignmentId: '',
@@ -235,8 +244,47 @@ function CriteriaManager({
       <CardContent className='grid gap-4 lg:grid-cols-2'>
         {assignments.map((assignment) => (
           <div key={assignment.assignmentId} className='rounded-lg border p-4'>
-            <p className='font-medium'>{assignment.assignmentTitle}</p>
-            <p className='mb-3 text-sm text-muted-foreground'>{assignment.classroomName}</p>
+            <div className='mb-3 flex flex-wrap items-start justify-between gap-3'>
+              <div>
+                <p className='font-medium'>{assignment.assignmentTitle}</p>
+                <p className='text-sm text-muted-foreground'>{assignment.classroomName}</p>
+              </div>
+              <div className='flex rounded-lg border bg-muted/30 p-1'>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={assignment.reviewMode === 'TEAM' ? 'default' : 'ghost'}
+                  className='h-7 px-2.5 text-xs'
+                  disabled={reviewModeMutation.isPending}
+                  onClick={() =>
+                    reviewModeMutation.mutate({
+                      assignmentId: assignment.assignmentId,
+                      reviewMode: 'TEAM'
+                    })
+                  }
+                >
+                  Theo nhóm
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={assignment.reviewMode === 'INDIVIDUAL' ? 'default' : 'ghost'}
+                  className='h-7 px-2.5 text-xs'
+                  disabled={reviewModeMutation.isPending}
+                  onClick={() =>
+                    reviewModeMutation.mutate({
+                      assignmentId: assignment.assignmentId,
+                      reviewMode: 'INDIVIDUAL'
+                    })
+                  }
+                >
+                  Theo cá nhân
+                </Button>
+              </div>
+            </div>
+            <p className='mb-3 text-xs text-muted-foreground'>
+              Đổi cách chấm sẽ xóa các lượt chấm cũ của học sinh; điểm giáo viên được giữ lại.
+            </p>
             {assignment.criteria.length ? (
               <div className='space-y-2'>
                 {assignment.criteria.map((criterion, index) => (
@@ -770,6 +818,9 @@ export function ShowcasePage() {
                 <div className='flex flex-wrap gap-2'>
                   <Badge variant='secondary'>{submission.assignmentTitle}</Badge>
                   <Badge variant='outline'>{submission.ratingCount} lượt đánh giá</Badge>
+                  <Badge variant='outline'>
+                    {submission.reviewMode === 'TEAM' ? 'Chấm theo nhóm' : 'Chấm theo cá nhân'}
+                  </Badge>
                 </div>
               </CardContent>
               <CardFooter className='mt-auto flex-wrap gap-2 border-t bg-muted/20'>
