@@ -8,6 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useTransition } from 'react';
 import * as Sentry from '@sentry/nextjs';
 
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+const SENTRY_ENABLED = process.env.NEXT_PUBLIC_SENTRY_DISABLED !== 'true' && Boolean(SENTRY_DSN);
+
 interface StatsErrorProps {
   error: Error;
   reset: () => void; // Add reset function from error boundary
@@ -17,6 +20,8 @@ export default function StatsError({ error, reset }: StatsErrorProps) {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!SENTRY_ENABLED) return;
+
     Sentry.captureException(error);
   }, [error]);
 

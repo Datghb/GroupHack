@@ -12,8 +12,9 @@ export function BrandLogo({ alt = 'VICheck', className, priority = false }: Bran
     <Image
       src='/vcheck3-logo-40.png'
       alt={alt}
-      width={512}
-      height={512}
+      width={48}
+      height={48}
+      sizes='48px'
       priority={priority}
       className={cn('size-9 rounded-full object-cover', className)}
     />

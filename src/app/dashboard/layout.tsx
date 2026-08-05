@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { CurrentUserProvider } from '@/hooks/use-current-user';
 import { getCurrentUser } from '@/lib/classroom-auth';
+import QueryProvider from '@/components/layout/query-provider';
 
 export const metadata: Metadata = {
   title: 'VICheck',
@@ -23,19 +24,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [cookieStore, user] = await Promise.all([cookies(), getCurrentUser()]);
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
-    <CurrentUserProvider initialUser={user}>
-      <KBar>
-        <SidebarProvider defaultOpen={defaultOpen}>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            <InfobarProvider defaultOpen={false}>
-              {children}
-              <InfoSidebar side='right' />
-            </InfobarProvider>
-          </SidebarInset>
-        </SidebarProvider>
-      </KBar>
-    </CurrentUserProvider>
+    <QueryProvider>
+      <CurrentUserProvider initialUser={user}>
+        <KBar>
+          <SidebarProvider defaultOpen={defaultOpen}>
+            <AppSidebar />
+            <SidebarInset>
+              <Header />
+              <InfobarProvider defaultOpen={false}>
+                {children}
+                <InfoSidebar side='right' />
+              </InfobarProvider>
+            </SidebarInset>
+          </SidebarProvider>
+        </KBar>
+      </CurrentUserProvider>
+    </QueryProvider>
   );
 }

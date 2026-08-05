@@ -4,8 +4,13 @@ import * as Sentry from '@sentry/nextjs';
 import NextError from 'next/error';
 import { useEffect } from 'react';
 
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+const SENTRY_ENABLED = process.env.NEXT_PUBLIC_SENTRY_DISABLED !== 'true' && Boolean(SENTRY_DSN);
+
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
+    if (!SENTRY_ENABLED) return;
+
     Sentry.captureException(error);
   }, [error]);
 

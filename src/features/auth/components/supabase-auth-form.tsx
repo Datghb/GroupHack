@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createClient } from '@/lib/supabase/client';
 import { Icons } from '@/components/icons';
+import { createAuthClient } from '../api/lazy-client';
 
 export function SupabaseAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const router = useRouter();
@@ -19,7 +19,8 @@ export function SupabaseAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   async function handleGoogleSignIn() {
     setPending(true);
     setError('');
-    const { error: oauthError } = await createClient().auth.signInWithOAuth({
+    const supabase = await createAuthClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`
@@ -39,7 +40,7 @@ export function SupabaseAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     const fullName = String(formData.get('fullName') ?? '').trim();
     setPending(true);
     setError('');
-    const supabase = createClient();
+    const supabase = await createAuthClient();
     const result = isSignUp
       ? await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
       : await supabase.auth.signInWithPassword({ email, password });

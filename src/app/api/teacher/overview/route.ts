@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getApiAuth } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { buildTeacherOverviewData } from '@/features/classroom/domain/teacher-overview';
 
 export async function GET() {
   const { userId, role } = await getApiAuth();
@@ -29,47 +30,37 @@ export async function GET() {
     db.from('class_enrollments').select('student_id').in('classroom_id', classIds),
     db
       .from('assignments')
-      .select('id,title,classroom_id,course_id,created_at')
+      .select('id,title,classroom_id,created_at')
       .in('classroom_id', classIds)
       .order('created_at', { ascending: false }),
     db.from('assignment_teams').select('id').in('classroom_id', classIds)
   ]);
-  const assignmentIds = (assignments ?? []).map((item) => item.id);
+  const assignmentRows = assignments ?? [];
+  const recentAssignments = assignmentRows.slice(0, 8);
+  const recentAssignmentIds = recentAssignments.map((item) => item.id);
   const [{ data: checkpoints }, { data: completions }] = await Promise.all([
-    assignmentIds.length
-      ? db.from('assignment_checkpoints').select('assignment_id').in('assignment_id', assignmentIds)
+    recentAssignmentIds.length
+      ? db
+          .from('assignment_checkpoints')
+          .select('assignment_id')
+          .in('assignment_id', recentAssignmentIds)
       : Promise.resolve({ data: [] }),
-    assignmentIds.length
+    recentAssignmentIds.length
       ? db
           .from('checkpoint_completions')
           .select('assignment_id,team_id')
-          .in('assignment_id', assignmentIds)
+          .in('assignment_id', recentAssignmentIds)
       : Promise.resolve({ data: [] })
   ]);
   return NextResponse.json({
-    data: {
-      classCount: classIds.length,
-      studentCount: new Set((enrollments ?? []).map((item) => item.student_id)).size,
-      teamCount: teams?.length ?? 0,
-      assignmentCount: assignments?.length ?? 0,
-      assignments: (assignments ?? []).slice(0, 8).map((assignment) => {
-        const totalCheckpoints = (checkpoints ?? []).filter(
-          (item) => item.assignment_id === assignment.id
-        ).length;
-        const assignmentCompletions = (completions ?? []).filter(
-          (item) => item.assignment_id === assignment.id
-        );
-        const teamCount = new Set(assignmentCompletions.map((item) => item.team_id)).size;
-        return {
-          id: assignment.id,
-          classId: assignment.classroom_id,
-          title: assignment.title,
-          className:
-            classes?.find((item) => item.id === assignment.classroom_id)?.name ?? 'Lớp học',
-          totalCheckpoints,
-          activeTeamCount: teamCount
-        };
-      })
-    }
+    data: buildTeacherOverviewData({
+      classes: classes ?? [],
+      enrollments: enrollments ?? [],
+      assignmentCount: assignmentRows.length,
+      recentAssignments,
+      teams: teams ?? [],
+      checkpoints: checkpoints ?? [],
+      completions: completions ?? []
+    })
   });
 }
