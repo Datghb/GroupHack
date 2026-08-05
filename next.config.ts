@@ -1,6 +1,13 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 
+const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+const isSentryEnabled = process.env.NEXT_PUBLIC_SENTRY_DISABLED !== 'true' && Boolean(sentryDsn);
+const sentryOrg = process.env.NEXT_PUBLIC_SENTRY_ORG;
+const sentryProject = process.env.NEXT_PUBLIC_SENTRY_PROJECT;
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
+const canUploadSentrySourceMaps = Boolean(sentryOrg && sentryProject && sentryAuthToken);
+
 // Define the base Next.js configuration
 const baseConfig: NextConfig = {
   turbopack: {
@@ -35,15 +42,16 @@ const baseConfig: NextConfig = {
 let configWithPlugins = baseConfig;
 
 // Conditionally enable Sentry configuration
-if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
+if (isSentryEnabled) {
   configWithPlugins = withSentryConfig(configWithPlugins, {
-    org: process.env.NEXT_PUBLIC_SENTRY_ORG,
-    project: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
+    org: sentryOrg,
+    project: sentryProject,
+    authToken: sentryAuthToken,
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
 
     // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
+    widenClientFileUpload: canUploadSentrySourceMaps,
 
     // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     tunnelRoute: '/monitoring',
@@ -51,19 +59,23 @@ if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
     // Disable Sentry telemetry
     telemetry: false,
 
-    // Sentry v10: moved under webpack namespace
     webpack: {
-      reactComponentAnnotation: {
-        enabled: true
-      },
       treeshake: {
-        removeDebugLogging: true
+        removeDebugLogging: true,
+        excludeReplayIframe: true,
+        excludeReplayShadowDOM: true
       }
     },
 
-    // Disable source map upload when org/project are not configured
+    bundleSizeOptimizations: {
+      excludeDebugStatements: true,
+      excludeReplayIframe: true,
+      excludeReplayShadowDom: true
+    },
+
+    // Disable source map upload outside CI or when upload credentials are not configured.
     sourcemaps: {
-      disable: !process.env.NEXT_PUBLIC_SENTRY_ORG || !process.env.NEXT_PUBLIC_SENTRY_PROJECT
+      disable: !canUploadSentrySourceMaps
     }
   });
 }

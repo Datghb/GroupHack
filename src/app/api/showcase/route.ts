@@ -8,6 +8,7 @@ import {
   canPublishAssignmentProduct,
   isStudentReviewOwner
 } from '@/features/showcase/domain/showcase';
+import { createShowcaseIndexes } from '@/features/showcase/domain/showcase-indexes';
 
 const submissionSchema = z.object({
   assignmentId: z.string().uuid(),
@@ -65,14 +66,14 @@ export async function GET() {
     assignmentIds.length
       ? db
           .from('product_submissions')
-          .select('*')
+          .select('id,assignment_id,team_id,title,description,website_url,updated_at')
           .in('assignment_id', assignmentIds)
           .order('updated_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     role === 'STUDENT' && assignmentIds.length
       ? db
           .from('assignment_team_members')
-          .select('assignment_id,team_id,assignment_teams!inner(name)')
+          .select('assignment_id,team_id')
           .eq('student_id', userId)
           .in('assignment_id', assignmentIds)
       : Promise.resolve({ data: [] }),
@@ -107,7 +108,7 @@ export async function GET() {
     submissionIds.length
       ? db
           .from('product_reviews')
-          .select('id,submission_id,reviewer_team_id,reviewer_id,rating,created_at,review_mode')
+          .select('id,submission_id,reviewer_team_id,reviewer_id,rating,created_at')
           .in('submission_id', submissionIds)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -120,7 +121,7 @@ export async function GET() {
     submissionIds.length
       ? db
           .from('product_discussion_comments')
-          .select('id,submission_id')
+          .select('submission_id')
           .in('submission_id', submissionIds)
       : Promise.resolve({ data: [] }),
     role === 'STUDENT' && assignmentIds.length
@@ -132,7 +133,7 @@ export async function GET() {
     role === 'STUDENT' && myTeamIds.length
       ? db
           .from('checkpoint_completions')
-          .select('checkpoint_id,assignment_id,team_id,completed_by,completion_scope')
+          .select('checkpoint_id,team_id,completed_by,completion_scope')
           .in('team_id', myTeamIds)
       : Promise.resolve({ data: [] }),
     role === 'STUDENT' && myTeamIds.length
@@ -144,35 +145,42 @@ export async function GET() {
     criterion_id: score.criterion_id,
     score: score.score
   }));
+  const showcaseIndexes = createShowcaseIndexes({
+    classrooms: classRows,
+    assignments: assignments ?? [],
+    teams: teams ?? [],
+    memberships: memberships ?? [],
+    submissions: submissions ?? [],
+    reviews: reviews ?? [],
+    reviewScores,
+    criteria: criteria ?? [],
+    comments: discussionComments ?? [],
+    checkpoints: checkpoints ?? [],
+    completions: completions ?? [],
+    members: members ?? []
+  });
   const mappedSubmissions = (submissions ?? []).map((submission) => {
-    const assignment = (assignments ?? []).find((item) => item.id === submission.assignment_id)!;
-    const myTeam = (memberships ?? []).find(
-      (item) => item.assignment_id === submission.assignment_id
-    );
-    const submissionReviews = (reviews ?? []).filter(
-      (item) => item.submission_id === submission.id
-    );
+    const assignment = showcaseIndexes.assignmentById.get(submission.assignment_id)!;
+    const myTeam = showcaseIndexes.membershipByAssignmentId.get(submission.assignment_id);
+    const submissionReviews = showcaseIndexes.reviewsBySubmissionId.get(submission.id) ?? [];
     const summary = calculateRatingSummary(submissionReviews.map((item) => item.rating));
-    const submissionReviewIds = new Set(submissionReviews.map((review) => review.id));
-    const submissionCriteria = (criteria ?? [])
-      .filter((criterion) => criterion.assignment_id === submission.assignment_id)
-      .map((criterion) => ({
-        id: criterion.id,
-        assignmentId: criterion.assignment_id,
-        title: criterion.title,
-        description: criterion.description,
-        position: criterion.position
-      }));
+    const submissionCriteria = (
+      showcaseIndexes.criteriaByAssignmentId.get(submission.assignment_id) ?? []
+    ).map((criterion) => ({
+      id: criterion.id,
+      assignmentId: criterion.assignment_id,
+      title: criterion.title,
+      description: criterion.description,
+      position: criterion.position
+    }));
     const mappedReviews = submissionReviews.map((review) => ({
       id: review.id,
       rating: review.rating,
       createdAt: review.created_at,
-      scores: (reviewScores ?? [])
-        .filter((score) => score.review_id === review.id)
-        .map((score) => ({
-          criterionId: score.criterion_id,
-          score: score.score
-        }))
+      scores: (showcaseIndexes.reviewScoresByReviewId.get(review.id) ?? []).map((score) => ({
+        criterionId: score.criterion_id,
+        score: score.score
+      }))
     }));
     const myReviewRow =
       role === 'TEACHER'
@@ -196,10 +204,9 @@ export async function GET() {
       id: submission.id,
       assignmentId: submission.assignment_id,
       assignmentTitle: assignment.title,
-      classroomName:
-        classRows.find((item) => item.id === assignment.classroom_id)?.name ?? 'Lớp học',
+      classroomName: showcaseIndexes.classroomById.get(assignment.classroom_id)?.name ?? 'Lớp học',
       teamId: submission.team_id,
-      teamName: (teams ?? []).find((team) => team.id === submission.team_id)?.name ?? 'Nhóm',
+      teamName: showcaseIndexes.teamById.get(submission.team_id)?.name ?? 'Nhóm',
       title: submission.title,
       description: submission.description,
       websiteUrl: submission.website_url,
@@ -213,17 +220,12 @@ export async function GET() {
       myReview: mappedReviews.find((review) => review.id === myReviewRow?.id) ?? null,
       criteria: submissionCriteria,
       criterionSummaries: submissionCriteria.map((criterion) => {
-        const scores = (reviewScores ?? [])
-          .filter(
-            (score) =>
-              submissionReviewIds.has(score.review_id) && score.criterion_id === criterion.id
-          )
-          .map((score) => score.score);
+        const scores =
+          showcaseIndexes.scoresBySubmissionAndCriterion.get(submission.id)?.get(criterion.id) ??
+          [];
         return { criterionId: criterion.id, ...calculateRatingSummary(scores) };
       }),
-      commentCount: (discussionComments ?? []).filter(
-        (comment) => comment.submission_id === submission.id
-      ).length,
+      commentCount: showcaseIndexes.commentCountBySubmissionId.get(submission.id) ?? 0,
       reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
     };
   });
@@ -231,24 +233,21 @@ export async function GET() {
   const publishableAssignments = [];
   if (role === 'STUDENT' && memberships?.length) {
     for (const membership of memberships) {
-      const checkpointRows = (checkpoints ?? []).filter(
-        (item) => item.assignment_id === membership.assignment_id
-      );
+      const checkpointRows =
+        showcaseIndexes.checkpointsByAssignmentId.get(membership.assignment_id) ?? [];
       const completedIds = getCheckpointCompletionState({
         checkpoints: checkpointRows.map((item) => ({
           id: item.id,
           scope: item.scope as 'INDIVIDUAL' | 'TEAM'
         })),
-        completions: (completions ?? [])
-          .filter((item) => item.team_id === membership.team_id)
-          .map((item) => ({
+        completions: (showcaseIndexes.completionsByTeamId.get(membership.team_id) ?? []).map(
+          (item) => ({
             checkpoint_id: item.checkpoint_id,
             completed_by: item.completed_by,
             completion_scope: item.completion_scope as 'INDIVIDUAL' | 'TEAM'
-          })),
-        memberIds: (members ?? [])
-          .filter((item) => item.team_id === membership.team_id)
-          .map((item) => item.student_id),
+          })
+        ),
+        memberIds: showcaseIndexes.memberIdsByTeamId.get(membership.team_id) ?? [],
         currentUserId: userId
       }).completedCheckpointIds;
       if (
@@ -269,16 +268,13 @@ export async function GET() {
         publishableAssignments.push({
           assignmentId: membership.assignment_id,
           assignmentTitle:
-            (assignments ?? []).find((item) => item.id === membership.assignment_id)?.title ??
-            'Bài tập',
+            showcaseIndexes.assignmentById.get(membership.assignment_id)?.title ?? 'Bài tập',
           teamId: membership.team_id,
-          teamName: (teams ?? []).find((team) => team.id === membership.team_id)?.name ?? 'Nhóm',
+          teamName: showcaseIndexes.teamById.get(membership.team_id)?.name ?? 'Nhóm',
           existingSubmissionId:
-            (submissions ?? []).find(
-              (item) =>
-                item.assignment_id === membership.assignment_id &&
-                item.team_id === membership.team_id
-            )?.id ?? null
+            showcaseIndexes.submissionByAssignmentAndTeam
+              .get(membership.assignment_id)
+              ?.get(membership.team_id)?.id ?? null
         });
       }
     }
@@ -297,16 +293,16 @@ export async function GET() {
                 assignmentId: assignment.id,
                 assignmentTitle: assignment.title,
                 classroomName:
-                  classRows.find((item) => item.id === assignment.classroom_id)?.name ?? 'Lớp học',
-                criteria: (criteria ?? [])
-                  .filter((criterion) => criterion.assignment_id === assignment.id)
-                  .map((criterion) => ({
+                  showcaseIndexes.classroomById.get(assignment.classroom_id)?.name ?? 'Lớp học',
+                criteria: (showcaseIndexes.criteriaByAssignmentId.get(assignment.id) ?? []).map(
+                  (criterion) => ({
                     id: criterion.id,
                     assignmentId: criterion.assignment_id,
                     title: criterion.title,
                     description: criterion.description,
                     position: criterion.position
-                  })),
+                  })
+                ),
                 reviewMode: assignment.review_mode === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'TEAM'
               }))
           : []
